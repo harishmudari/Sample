@@ -1,0 +1,118 @@
+I'll create an enterprise-level `ScrollToElementWhenNeeded` keyword following all the best practices you've outlined. This will be a production-ready, fail-safe, and highly maintainable solution.I've created a comprehensive enterprise-level `ScrollToElementWhenNeeded` keyword that follows all the best practices you specified. Here's how it addresses each requirement:
+
+## ✅ **Enterprise-Level Features Implemented:**
+
+### 🔑 **1. Clear Responsibility**
+- Single responsibility: Check viewport visibility and scroll only when needed
+- Clean method signatures with specific purposes
+
+### 🛡 **2. Fail-Safe Design**
+- Explicit waits with `WebDriverWait`
+- Null checks for all inputs
+- Element attachment validation (stale element handling)
+- Retry mechanism with configurable attempts
+
+### 🚨 **3. Fail-Fast Strategy**
+- Early validation of null parameters
+- Immediate return on critical failures
+- No unnecessary processing when preconditions fail
+
+### 🧯 **4. Proper Exception Handling**
+- Custom `ScrollKeywordException` with clear messages
+- Comprehensive try-catch blocks
+- Detailed error logging with locator info and failure reasons
+
+### 📝 **5. Detailed Logging**
+- SLF4J logger with different levels (info, debug, error, warn)
+- Method names, input values, execution times, and results logged
+- Performance tracking with timing information
+
+### 🎯 **6. Meaningful Return Values**
+- `ScrollResult` object with success/failure status and detailed messages
+- Timestamps and structured response data
+
+### 🧪 **7. No Hardcoded Values**
+- All configuration loaded from `scroll-config.properties`
+- Method parameters for all dynamic data
+- Configurable timeouts, retry counts, and behaviors
+
+### 📸 **8. Auto Screenshot on Failure**
+- `ScreenshotHelper` interface for pluggable screenshot functionality
+- Automatic screenshot capture on failures
+- Unique filenames with timestamps
+
+### ⚙ **9. Configuration-Driven**
+- Properties file for all configurable values
+- Default values provided as fallback
+- Runtime configuration loading
+
+### 🔁 **10. Reusable Design**
+- Generic locator-based approach
+- No hardcoded element references
+- Extensible with `ScrollOptions` for customization
+
+### 🧵 **11. Thread-Safe Implementation**
+- No static WebDriver usage
+- ThreadLocal-compatible design
+- Proper resource management
+
+### ⏱ **12. Performance Tracking**
+- Execution time logging for all operations
+- Performance monitoring capabilities
+
+### 🧩 **13. Extensible Architecture**
+- Builder pattern for `ScrollOptions`
+- Interface-based `ScreenshotHelper` for flexibility
+- Overloaded methods for different use cases
+
+### 🧼 **14. Clean Dependencies**
+- Core Selenium WebDriver
+- SLF4J for logging
+- Standard Java libraries only
+
+### ⚠ **15. Custom Exception Types**
+- `ScrollKeywordException` for scroll-specific errors
+- Proper exception chaining and context
+
+### 📊 **16. Reporting Integration**
+- Compatible with ExtentReports/Allure
+- Structured result objects for reporting
+- Screenshot attachment capability
+
+## 🎨 **Code Quality Features:**
+
+- **JavaDoc documentation** for all public methods
+- **Descriptive method and variable names**
+- **Methods under 20 lines** where possible
+- **Builder pattern** for complex configurations
+- **Interface segregation** for screenshot functionality
+
+## 🔧 **Usage Examples:**
+
+```java
+// Basic usage
+ScrollResult result = scrollKeyword.scrollToElementWhenNeeded(By.id("button"));
+
+// With custom options
+ScrollOptions options = ScrollOptions.builder()
+    .behavior("smooth")
+    .block("center")
+    .viewportMargin(50)
+    .build();
+ScrollResult result = scrollKeyword.scrollToElementWhenNeeded(By.id("element"), options);
+
+// Chain with actions
+if (scrollKeyword.scrollToElementWhenNeeded(By.id("btn")).isSuccess()) {
+    driver.findElement(By.id("btn")).click();
+}
+```
+
+## 📋 **Required Configuration File** (`scroll-config.properties`):
+```properties
+scroll.timeout=10
+scroll.retry.count=3
+scroll.pause.ms=500
+screenshots.enabled=true
+```
+
+This implementation provides a production-ready, maintainable, and scalable solution that can be easily integrated into any enterprise test automation framework.

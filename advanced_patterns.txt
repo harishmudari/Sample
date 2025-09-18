@@ -1,0 +1,466 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- testng.xml - TestNG Suite Configuration -->
+<suite name="ElementStateValidatorTestSuite" verbose="2" parallel="methods" thread-count="3">
+    
+    <parameter name="browser" value="chrome"/>
+    <parameter name="environment" value="QA"/>
+    <parameter name="baseUrl" value="https://qa.example.com"/>
+    
+    <listeners>
+        <listener class-name="com.enterprise.listeners.ExtentReportListener"/>
+        <listener class-name="com.enterprise.listeners.ScreenshotListener"/>
+        <listener class-name="io.qameta.allure.testng.AllureTestNg"/>
+    </listeners>
+    
+    <test name="Element State Validation Tests" preserve-order="true">
+        <classes>
+            <class name="com.enterprise.tests.ElementStateValidatorTest"/>
+            <class name="com.enterprise.tests.LoginPageTest"/>
+            <class name="com.enterprise.tests.FormValidationTest"/>
+        </classes>
+    </test>
+    
+    <test name="Cross Browser Tests" preserve-order="false">
+        <parameter name="browser" value="firefox"/>
+        <classes>
+            <class name="com.enterprise.tests.CrossBrowserTest"/>
+        </classes>
+    </test>
+    
+</suite>
+
+<!-- 
+=================================
+Advanced Usage Patterns in Java
+=================================
+-->
+
+/*
+ * Advanced Pattern 1: Fluent API Style Element Validator
+ */
+package com.enterprise.selenium.keywords.fluent;
+
+import org.openqa.selenium.By;
+import com.enterprise.selenium.keywords.ElementStateValidator;
+import com.enterprise.selenium.keywords.ElementStateValidator.ElementStateResponse;
+import com.enterprise.selenium.keywords.ElementStateValidator.ElementStateValidationException;
+
+public class FluentElementValidator {
+    private By locator;
+    private Integer timeout;
+    private boolean validateSelected = false;
+    private boolean screenshotOnFailure = true;
+    
+    private FluentElementValidator(By locator) {
+        this.locator = locator;
+    }
+    
+    public static FluentElementValidator element(By locator) {
+        return new FluentElementValidator(locator);
+    }
+    
+    public FluentElementValidator withTimeout(int seconds) {
+        this.timeout = seconds;
+        return this;
+    }
+    
+    public FluentElementValidator checkSelection() {
+        this.validateSelected = true;
+        return this;
+    }
+    
+    public FluentElementValidator skipSelection() {
+        this.validateSelected = false;
+        return this;
+    }
+    
+    public FluentElementValidator noScreenshotOnFailure() {
+        this.screenshotOnFailure = false;
+        return this;
+    }
+    
+    public ElementStateResponse validate() throws ElementStateValidationException {
+        return ElementStateValidator.validateElementState(locator, timeout, validateSelected);
+    }
+    
+    public boolean isReady() {
+        try {
+            ElementStateResponse response = validate();
+            return response.isSuccess() && response.isDisplayed() && response.isEnabled();
+        } catch (ElementStateValidationException e) {
+            return false;
+        }
+    }
+    
+    public FluentElementValidator shouldBeDisplayed() throws ElementStateValidationException {
+        ElementStateResponse response = validate();
+        if (!response.isDisplayed()) {
+            throw new ElementStateValidationException(
+                "Expected element to be displayed but it was not: " + locator.toString());
+        }
+        return this;
+    }
+    
+    public FluentElementValidator shouldBeEnabled() throws ElementStateValidationException {
+        ElementStateResponse response = validate();
+        if (!response.isEnabled()) {
+            throw new ElementStateValidationException(
+                "Expected element to be enabled but it was not: " + locator.toString());
+        }
+        return this;
+    }
+    
+    public FluentElementValidator shouldBeSelected() throws ElementStateValidationException {
+        ElementStateResponse response = ElementStateValidator.validateElementState(locator, timeout, true);
+        if (!response.isSelected()) {
+            throw new ElementStateValidationException(
+                "Expected element to be selected but it was not: " + locator.toString());
+        }
+        return this;
+    }
+}
+
+/*
+ * Advanced Pattern 2: Element State Builder with Custom Conditions
+ */
+package com.enterprise.selenium.keywords.builder;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.WebDriver;
+import java.util.function.Predicate;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ElementStateBuilder {
+    private By locator;
+    private List<Predicate<WebElement>> conditions = new ArrayList<>();
+    private String description = "";
+    private int timeout = 10;
+    
+    public ElementStateBuilder(By locator) {
+        this.locator = locator;
+    }
+    
+    public static ElementStateBuilder forElement(By locator) {
+        return new ElementStateBuilder(locator);
+    }
+    
+    public ElementStateBuilder mustBeDisplayed() {
+        conditions.add(WebElement::isDisplayed);
+        description += "displayed, ";
+        return this;
+    }
+    
+    public ElementStateBuilder mustBeEnabled() {
+        conditions.add(WebElement::isEnabled);
+        description += "enabled, ";
+        return this;
+    }
+    
+    public ElementStateBuilder mustBeSelected() {
+        conditions.add(WebElement::isSelected);
+        description += "selected, ";
+        return this;
+    }
+    
+    public ElementStateBuilder mustHaveText(String expectedText) {
+        conditions.add(element -> element.getText().equals(expectedText));
+        description += "text='" + expectedText + "', ";
+        return this;
+    }
+    
+    public ElementStateBuilder mustContainText(String partialText) {
+        conditions.add(element -> element.getText().contains(partialText));
+        description += "containing '" + partialText + "', ";
+        return this;
+    }
+    
+    public ElementStateBuilder mustHaveAttribute(String attribute, String value) {
+        conditions.add(element -> value.equals(element.getAttribute(attribute)));
+        description += attribute + "='" + value + "', ";
+        return this;
+    }
+    
+    public ElementStateBuilder withTimeout(int seconds) {
+        this.timeout = seconds;
+        return this;
+    }
+    
+    public ElementStateBuilder withCustomCondition(Predicate<WebElement> condition, String desc) {
+        conditions.add(condition);
+        description += desc + ", ";
+        return this;
+    }
+    
+    public boolean verify() {
+        try {
+            WebDriver driver = ElementStateValidator.getDriver();
+            WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(timeout));
+            
+            WebElement element = wait.until(ExpectedConditions.presenceOfElementLocated(locator));
+            
+            boolean allConditionsMet = conditions.stream().allMatch(condition -> {
+                try {
+                    return condition.test(element);
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+            
+            if (allConditionsMet) {
+                log.info("Element {} meets all conditions: {}", locator, description);
+                return true;
+            } else {
+                log.warn("Element {} does not meet all conditions: {}", locator, description);
+                return false;
+            }
+            
+        } catch (Exception e) {
+            log.error("Failed to verify element {}: {}", locator, e.getMessage());
+            return false;
+        }
+    }
+}
+
+/*
+ * Advanced Pattern 3: Page Object Base with Element State Integration
+ */
+package com.enterprise.selenium.pages.base;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.support.PageFactory;
+import com.enterprise.selenium.keywords.ElementStateValidator;
+import com.enterprise.selenium.keywords.fluent.FluentElementValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public abstract class BasePage {
+    protected WebDriver driver;
+    protected Logger log = LoggerFactory.getLogger(this.getClass());
+    
+    public BasePage(WebDriver driver) {
+        this.driver = driver;
+        ElementStateValidator.setDriver(driver);
+        PageFactory.initElements(driver, this);
+    }
+    
+    /**
+     * Verify that the page is loaded and ready
+     */
+    public abstract boolean isPageReady();
+    
+    /**
+     * Get the page title for validation
+     */
+    public abstract String getExpectedPageTitle();
+    
+    /**
+     * Wait for critical elements to be ready
+     */
+    protected boolean waitForElementsReady(By... locators) {
+        for (By locator : locators) {
+            try {
+                FluentElementValidator.element(locator)
+                    .withTimeout(15)
+                    .shouldBeDisplayed()
+                    .shouldBeEnabled();
+            } catch (Exception e) {
+                log.error("Element not ready: {} - {}", locator, e.getMessage());
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    /**
+     * Verify page readiness with title and key elements
+     */
+    protected boolean verifyPageReadiness(String expectedTitle, By... keyElements) {
+        // Check page title
+        if (!driver.getTitle().equals(expectedTitle)) {
+            log.warn("Page title mismatch. Expected: '{}', Actual: '{}'", expectedTitle, driver.getTitle());
+            return false;
+        }
+        
+        // Check key elements
+        return waitForElementsReady(keyElements);
+    }
+    
+    /**
+     * Safe click with element state validation
+     */
+    protected boolean safeClick(By locator) {
+        try {
+            return FluentElementValidator.element(locator)
+                .withTimeout(10)
+                .shouldBeDisplayed()
+                .shouldBeEnabled()
+                .isReady();
+        } catch (Exception e) {
+            log.error("Cannot safely click element {}: {}", locator, e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Safe text input with validation
+     */
+    protected boolean safeInput(By locator, String text) {
+        if (text == null || text.trim().isEmpty()) {
+            log.warn("Cannot input empty/null text to element: {}", locator);
+            return false;
+        }
+        
+        try {
+            boolean isReady = FluentElementValidator.element(locator)
+                .withTimeout(10)
+                .skipSelection()
+                .isReady();
+                
+            if (isReady) {
+                driver.findElement(locator).clear();
+                driver.findElement(locator).sendKeys(text);
+                log.info("Successfully input text to element: {}", locator);
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("Cannot safely input text to element {}: {}", locator, e.getMessage());
+            return false;
+        }
+    }
+}
+
+/*
+ * Advanced Pattern 4: Retry Utility with Element State Integration
+ */
+package com.enterprise.selenium.utils;
+
+import java.util.function.Supplier;
+import java.util.function.BooleanSupplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class RetryUtil {
+    private static final Logger log = LoggerFactory.getLogger(RetryUtil.class);
+    
+    public static <T> T retry(Supplier<T> operation, int maxAttempts, long delayMs, String operationName) {
+        Exception lastException = null;
+        
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                log.debug("Attempting {} - attempt {} of {}", operationName, attempt, maxAttempts);
+                T result = operation.get();
+                log.info("Successfully completed {} on attempt {}", operationName, attempt);
+                return result;
+                
+            } catch (Exception e) {
+                lastException = e;
+                log.warn("Attempt {} failed for {}: {}", attempt, operationName, e.getMessage());
+                
+                if (attempt < maxAttempts) {
+                    try {
+                        Thread.sleep(delayMs * attempt); // Exponential backoff
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        throw new RuntimeException("Retry interrupted", ie);
+                    }
+                }
+            }
+        }
+        
+        log.error("All {} attempts failed for {}", maxAttempts, operationName);
+        throw new RuntimeException("Operation failed after " + maxAttempts + " attempts: " + operationName, lastException);
+    }
+    
+    public static boolean retryUntilTrue(BooleanSupplier condition, int maxAttempts, long delayMs, String conditionName) {
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                if (condition.getAsBoolean()) {
+                    log.info("Condition '{}' met on attempt {}", conditionName, attempt);
+                    return true;
+                }
+                
+                if (attempt < maxAttempts) {
+                    log.debug("Condition '{}' not met on attempt {}, retrying...", conditionName, attempt);
+                    Thread.sleep(delayMs);
+                }
+                
+            } catch (Exception e) {
+                log.warn("Exception during attempt {} for condition '{}': {}", attempt, conditionName, e.getMessage());
+                if (attempt < maxAttempts) {
+                    try {
+                        Thread.sleep(delayMs);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        return false;
+                    }
+                }
+            }
+        }
+        
+        log.error("Condition '{}' not met after {} attempts", conditionName, maxAttempts);
+        return false;
+    }
+}
+
+/*
+ * Advanced Pattern 5: Element State Assertions for TestNG
+ */
+package com.enterprise.selenium.assertions;
+
+import org.testng.Assert;
+import org.openqa.selenium.By;
+import com.enterprise.selenium.keywords.ElementStateValidator;
+import com.enterprise.selenium.keywords.ElementStateValidator.ElementStateResponse;
+
+public class ElementStateAssertions {
+    
+    public static void assertElementDisplayed(By locator, String message) {
+        try {
+            ElementStateResponse response = ElementStateValidator.validateElementState(locator, 10, false);
+            Assert.assertTrue(response.isSuccess() && response.isDisplayed(), 
+                message + " - Element should be displayed: " + locator.toString());
+        } catch (Exception e) {
+            Assert.fail(message + " - Failed to validate element: " + e.getMessage());
+        }
+    }
+    
+    public static void assertElementEnabled(By locator, String message) {
+        try {
+            ElementStateResponse response = ElementStateValidator.validateElementState(locator, 10, false);
+            Assert.assertTrue(response.isSuccess() && response.isEnabled(), 
+                message + " - Element should be enabled: " + locator.toString());
+        } catch (Exception e) {
+            Assert.fail(message + " - Failed to validate element: " + e.getMessage());
+        }
+    }
+    
+    public static void assertElementSelected(By locator, String message) {
+        try {
+            ElementStateResponse response = ElementStateValidator.validateElementState(locator, 10, true);
+            Assert.assertTrue(response.isSuccess() && response.isSelected(), 
+                message + " - Element should be selected: " + locator.toString());
+        } catch (Exception e) {
+            Assert.fail(message + " - Failed to validate element: " + e.getMessage());
+        }
+    }
+    
+    public static void assertElementReady(By locator, String message) {
+        boolean isReady = ElementStateValidator.isElementReady(locator, 10);
+        Assert.assertTrue(isReady, message + " - Element should be ready for interaction: " + locator.toString());
+    }
+    
+    public static void assertElementNotDisplayed(By locator, String message) {
+        try {
+            ElementStateResponse response = ElementStateValidator.validateElementState(locator, 5, false);
+            Assert.assertTrue(!response.isDisplayed(), 
+                message + " - Element should not be displayed: " + locator.toString());
+        } catch (Exception e) {
+            // Element not found is acceptable for "not displayed" assertion
+            Assert.assertTrue(true, message + " - Element correctly not found/displayed");
+        }
+    }
+}

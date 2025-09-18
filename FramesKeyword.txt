@@ -1,0 +1,91 @@
+I've created a comprehensive enterprise-level Frame Handler for Selenium with Java that incorporates all the best practices you mentioned. Here are the key features implemented:
+✅ Enterprise Best Practices Implemented:
+🔑 Clear Responsibility
+
+Each method has a single responsibility (switch by index, name, element, locator, etc.)
+Clean method names: switchToFrameByIndex(), switchToParentFrame(), getFrameCount()
+
+🛡 Fail-Safe Design
+
+Explicit waits using WebDriverWait with ExpectedConditions.frameToBeAvailableAndSwitchToIt()
+Comprehensive null checks and input validation
+Built-in retry logic with configurable retry count
+
+🚨 Fail-Fast Strategy
+
+Early exit on null inputs, negative indices, empty strings
+Immediate failure on NoSuchFrameException (no retry for missing frames)
+
+🧯 Proper Exception Handling
+
+Try-catch blocks with detailed error messages
+Custom CustomFrameException for better error categorization
+Logs include method name, input values, locator info, and actual error
+
+📝 Detailed Logging
+
+Uses SLF4J logger with different levels (info, debug, error, warn)
+Logs method entry/exit, parameters, execution time, and results
+
+🎯 Meaningful Returns
+
+Returns FrameOperationResult object with success status, message, execution time, and optional data
+Clear boolean success indicators with detailed messages
+
+🧪 No Hardcoded Data
+
+All parameters passed through method arguments
+Configuration values loaded from external properties file
+
+📸 Auto Screenshot on Failure
+
+Automatic screenshot capture when operations fail
+Integration-ready for ExtentReports/Allure frameworks
+
+⚙ Configuration-Driven
+
+Timeout, retry count, screenshot settings from automation.properties
+Fallback to sensible defaults if config file is missing
+
+🔁 Reusable Design
+
+No hardcoded locators - accepts By locators as parameters
+Thread-safe implementation using ThreadLocal<WebDriver>
+
+🧵 Thread-Safe Implementation
+
+Uses ThreadLocal<WebDriver> to avoid static WebDriver issues
+Proper cleanup method to prevent memory leaks
+
+⏱ Performance Tracking
+
+Execution time tracking for all operations
+Performance logging for optimization insights
+
+🧩 Extensible Architecture
+
+Functional interface design allows easy extension
+Result object pattern enables future enhancements
+
+🎯 Usage Examples:
+java// Set driver for current thread
+FrameHandler.setDriver(driver);
+
+// Switch to frame by index
+FrameOperationResult result = FrameHandler.switchToFrameByIndex(0);
+if (result.isSuccess()) {
+    log.info("Frame switch successful: {}", result.getMessage());
+}
+
+// Switch using locator
+By frameLocator = By.id("myFrame");
+FrameOperationResult result2 = FrameHandler.switchToFrameByLocator(frameLocator);
+
+// Clean up when done
+FrameHandler.cleanup();
+📋 Required Configuration File (config/automation.properties):
+propertiesframe.timeout=10
+frame.retry.count=3
+screenshot.on.failure=true
+This implementation follows all enterprise standards with proper error handling, logging, configuration management, and thread safety - perfect for product-based company automation frameworks!RetryClaude does not have the ability to run the code it generates yet.Claude can make mistakes. Please double-check responses. Sonnet 4CopyPublishpackage com.automation.keywords;
+

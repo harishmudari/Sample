@@ -1,0 +1,244 @@
+Perfect! I've created a comprehensive enterprise-level **Window Management Keyword** that handles maximize, minimize, fullscreen, and all window operations with robust error handling and enterprise-grade features.
+
+## ✅ **Enterprise-Level Features Implemented:**
+
+### 🔑 **Core Window Operations (Single Responsibility)**
+- `maximizeWindow()` - Maximize browser window
+- `minimizeWindow()` - Minimize browser window  
+- `setFullscreen()` - Enter fullscreen mode (F11 equivalent)
+- `exitFullscreen()` - Exit fullscreen mode
+- `resizeWindow(width, height)` - Resize to specific dimensions
+- `positionWindow(x, y)` - Position at specific coordinates
+
+### 🛡 **Advanced Features**
+- `centerWindow()` - Center window on screen
+- `setDefaultWindowSize()` - Reset to configured default size
+- `restoreWindow()` - Restore to previous state
+- `getWindowInfo()` - Get comprehensive window details
+- State checking: `isWindowMaximized()`, `isWindowFullscreen()`
+
+### 🚨 **Fail-Safe Design**
+- **Dimension Validation**: Prevents invalid window sizes
+- **Screen Size Validation**: Validates against screen dimensions
+- **State Tracking**: Stores previous window state for restoration
+- **Operation Verification**: Confirms operations completed successfully
+- **Retry Mechanism**: Configurable retry attempts for all operations
+
+### 🧯 **Comprehensive Error Handling**
+- Custom `WindowManagementException` with detailed context
+- Fallback mechanisms (WebDriver → JavaScript for unsupported operations)
+- Screenshot capture on failures
+- Detailed error logging with operation context
+
+### 📝 **Detailed Logging & Performance Tracking**
+- Method execution timing
+- Operation attempt tracking
+- State change logging
+- Screen dimension and position logging
+
+### 🎯 **Meaningful Return Values**
+- `WindowResult` objects with success/failure status
+- `WindowInfo` objects with comprehensive window details
+- Structured error messages with context
+
+## 🔧 **Advanced Usage Examples:**
+
+### **Basic Window Operations**
+```java
+WindowManagementKeyword windowKeyword = new WindowManagementKeyword(driver, screenshotHelper);
+
+// Basic operations
+WindowResult result = windowKeyword.maximizeWindow();
+if (result.isSuccess()) {
+    System.out.println("Window maximized successfully");
+}
+
+// Resize to specific dimensions
+windowKeyword.resizeWindow(1920, 1080);
+
+// Position window
+windowKeyword.positionWindow(100, 100);
+
+// Fullscreen operations
+windowKeyword.setFullscreen();
+Thread.sleep(2000);
+windowKeyword.exitFullscreen();
+```
+
+### **Responsive Design Testing**
+```java
+AdvancedWindowManagement advancedWindow = new AdvancedWindowManagement(windowKeyword);
+
+// Test different viewport sizes
+advancedWindow.setWindowSize(WindowSize.MOBILE_PORTRAIT);   // 375x667
+advancedWindow.setWindowSize(WindowSize.TABLET_LANDSCAPE);  // 1024x768
+advancedWindow.setWindowSize(WindowSize.DESKTOP_LARGE);     // 1920x1080
+
+// Automated responsive testing
+advancedWindow.testResponsiveDesign((size, windowInfo) -> {
+    System.out.println("Testing at size: " + size);
+    // Run your responsive tests here
+    validateLayoutAtSize(size);
+});
+```
+
+### **Multi-Monitor Testing**
+```java
+// Position window for multi-monitor testing
+advancedWindow.positionForMultiMonitor(MonitorPosition.LEFT_HALF);
+advancedWindow.positionForMultiMonitor(MonitorPosition.TOP_RIGHT);
+advancedWindow.positionForMultiMonitor(MonitorPosition.CENTER);
+```
+
+### **State Management & Recovery**
+```java
+// Store current state before operations
+WindowInfo originalState = windowKeyword.getWindowInfo();
+
+// Perform test operations
+windowKeyword.setFullscreen();
+runFullscreenTests();
+
+// Restore previous state
+windowKeyword.restoreWindow();
+
+// Check current state
+if (windowKeyword.isWindowMaximized()) {
+    System.out.println("Window is currently maximized");
+}
+```
+
+## 📊 **Integration with Test Frameworks:**
+
+### **TestNG Integration**
+```java
+public class WindowManagementTests extends BaseTest {
+    
+    private WindowManagementKeyword windowKeyword;
+    
+    @BeforeMethod
+    public void setup() {
+        windowKeyword = new WindowManagementKeyword(getDriver(), getScreenshotHelper());
+    }
+    
+    @Test(description = "Test responsive design across different viewport sizes")
+    public void testResponsiveDesign() {
+        AdvancedWindowManagement advancedWindow = new AdvancedWindowManagement(windowKeyword);
+        
+        WindowSize[] testSizes = {
+            WindowSize.MOBILE_PORTRAIT,
+            WindowSize.TABLET_PORTRAIT, 
+            WindowSize.DESKTOP_LARGE
+        };
+        
+        for (WindowSize size : testSizes) {
+            WindowResult result = advancedWindow.setWindowSize(size);
+            Assert.assertTrue(result.isSuccess(), "Failed to set window size: " + size);
+            
+            // Run responsive tests at this size
+            validateResponsiveLayout();
+        }
+    }
+    
+    @Test(description = "Test window state management")
+    public void testWindowStateManagement() {
+        // Test maximize
+        WindowResult result = windowKeyword.maximizeWindow();
+        Assert.assertTrue(result.isSuccess());
+        Assert.assertTrue(windowKeyword.isWindowMaximized());
+        
+        // Test fullscreen
+        result = windowKeyword.setFullscreen();
+        Assert.assertTrue(result.isSuccess());
+        
+        // Exit fullscreen
+        result = windowKeyword.exitFullscreen();
+        Assert.assertTrue(result.isSuccess());
+        Assert.assertFalse(windowKeyword.isWindowFullscreen());
+    }
+}
+```
+
+### **Cucumber Step Definitions**
+```java
+public class WindowStepDefinitions {
+    
+    private WindowManagementKeyword windowKeyword;
+    
+    @Given("the browser window is maximized")
+    public void maximizeBrowserWindow() {
+        windowKeyword = new WindowManagementKeyword(DriverManager.getDriver(), 
+                                                   ScreenshotManager.getInstance());
+        WindowResult result = windowKeyword.maximizeWindow();
+        Assert.assertTrue(result.isSuccess(), "Failed to maximize window");
+    }
+    
+    @When("I resize the window to {int}x{int}")
+    public void resizeWindow(int width, int height) {
+        WindowResult result = windowKeyword.resizeWindow(width, height);
+        Assert.assertTrue(result.isSuccess(), "Failed to resize window");
+    }
+    
+    @When("I set the window to fullscreen")
+    public void setFullscreen() {
+        WindowResult result = windowKeyword.setFullscreen();
+        Assert.assertTrue(result.isSuccess(), "Failed to set fullscreen");
+    }
+    
+    @Then("the window should be in fullscreen mode")
+    public void verifyFullscreen() {
+        Assert.assertTrue(windowKeyword.isWindowFullscreen(), "Window is not in fullscreen mode");
+    }
+}
+```
+
+## 🔧 **Required Configuration File** (`window-config.properties`):
+
+```properties
+# Window operation timeouts (in seconds)
+window.timeout=10
+
+# Retry configuration
+window.retry.count=3
+window.operation.pause.ms=500
+
+# Screenshot settings
+screenshots.enabled=true
+
+# Operation verification
+window.verify.operations=true
+
+# Default window dimensions
+window.default.width=1920
+window.default.height=1080
+```
+
+## 🧪 **Comprehensive Test Suite:**
+
+The implementation includes a complete test suite (`WindowManagementTestSuite`) that tests:
+
+1. **Basic Operations**: Maximize, minimize, fullscreen
+2. **Resize Operations**: Various window sizes with validation
+3. **Position Operations**: Window positioning and centering
+4. **State Management**: State tracking and restoration
+5. **Responsive Design**: Multi-viewport testing
+6. **Multi-Monitor**: Positioning for different monitor setups
+
+## 🎨 **Advanced Features:**
+
+### **Responsive Design Testing**
+- Predefined viewport sizes for mobile, tablet, desktop
+- Automated testing across multiple screen sizes
+- Callback interface for custom validation at each size
+
+### **Multi-Monitor Support**
+- Intelligent window positioning for multi-monitor setups
+- Screen-aware positioning calculations
+- Support for split-screen testing scenarios
+
+### **State Management**
+- Automatic state tracking and restoration
+- Previous state preservation for rollback scenarios
+- Comprehensive window information retrieval
+
+This enterprise-level window management keyword provides everything needed for comprehensive window testing, responsive design validation, and multi-monitor scenario testing with robust error handling and detailed reporting capabilities.

@@ -1,0 +1,318 @@
+Perfect. From here on, I’ll **explain all remaining complicated topics in order**, without stopping to ask — using simple English, real-world examples, problems, and proper fixes.
+
+---
+
+## 🔍 **3. Dynamically Changing Locators / Attributes**
+
+### ❗ Problem:
+
+React and Angular often use **random IDs**, auto-generated class names, or conditional rendering. So hardcoded locators like `By.id("btn_123")` fail.
+
+```html
+<button id="btn_48923" class="btn-xyz-914">Submit</button>
+```
+
+* These values may **change every page load** or user session.
+* XPath like `//*[@id='btn_48923']` will break next time.
+
+### ✅ Fix:
+
+* Avoid IDs if they are random.
+* Use **relative XPath**:
+
+  ```java
+  //button[text()='Submit']
+  ```
+* Or, use **`contains()`** if class partially matches:
+
+  ```java
+  //button[contains(@class, 'btn')]
+  ```
+* Prefer `data-*` attributes if available:
+
+  ```html
+  <button data-test-id="submitBtn">Submit</button>
+  ```
+
+---
+
+## 🔍 **4. Loading Spinners / Overlays**
+
+### ❗ Problem:
+
+Angular/React apps show a loading spinner before showing real data.
+
+* Selenium tries to click the button.
+* But it's hidden behind an overlay/spinner.
+
+### ✅ Fix:
+
+Wait for **spinner or overlay to disappear**:
+
+```java
+wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("spinner")));
+```
+
+You can also wait for the **element to be clickable**:
+
+```java
+wait.until(ExpectedConditions.elementToBeClickable(By.id("submit")));
+```
+
+---
+
+## 🔍 **5. Shadow DOM**
+
+### ❗ Problem:
+
+Modern UI libraries (e.g., Lit, Polymer) use **Shadow DOM** — a way to encapsulate styles and elements.
+
+Selenium **cannot access** shadow DOM by default.
+
+```html
+<custom-input>
+  #shadow-root
+    <input type="text">
+</custom-input>
+```
+
+### ✅ Fix:
+
+Use **JavaScript Executor** to access inside shadow DOM:
+
+```java
+JavascriptExecutor js = (JavascriptExecutor) driver;
+WebElement shadowHost = driver.findElement(By.cssSelector("custom-input"));
+WebElement shadowRoot = (WebElement) js.executeScript("return arguments[0].shadowRoot", shadowHost);
+WebElement input = shadowRoot.findElement(By.cssSelector("input"));
+input.sendKeys("Hello");
+```
+
+---
+
+## 🔍 **6. Nested Iframes / Micro Frontends**
+
+### ❗ Problem:
+
+Modern apps split features into **iframes** (micro frontends). Selenium fails with `NoSuchElementException`.
+
+### ✅ Fix:
+
+Switch to iframe first:
+
+```java
+driver.switchTo().frame("frameName");
+driver.findElement(By.id("insideFrame")).click();
+```
+
+Then switch back:
+
+```java
+driver.switchTo().defaultContent();
+```
+
+---
+
+## 🔍 **7. Toast Messages / Transient Elements**
+
+### ❗ Problem:
+
+Toast messages show for a **few seconds** and disappear. Selenium often **misses** reading them.
+
+### ✅ Fix:
+
+Wait for the element to be **visible**:
+
+```java
+wait.until(ExpectedConditions.visibilityOfElementLocated(By.className("toast-message")));
+```
+
+Capture it quickly:
+
+```java
+String msg = driver.findElement(By.className("toast-message")).getText();
+```
+
+---
+
+## 🔍 **8. Virtual Scrolling / Lazy Loading**
+
+### ❗ Problem:
+
+Only a few elements are loaded initially. Rest are loaded on scroll.
+
+Selenium can’t find those elements yet.
+
+### ✅ Fix:
+
+Scroll using JavaScript:
+
+```java
+((JavascriptExecutor) driver).executeScript("arguments[0].scrollIntoView(true);", element);
+```
+
+Or use Action class:
+
+```java
+new Actions(driver).moveToElement(element).perform();
+```
+
+---
+
+## 🔍 **9. Two-Way Data Binding**
+
+### ❗ Problem:
+
+Angular updates DOM instantly as input changes. Selenium may validate too early or too late.
+
+### ✅ Fix:
+
+After `sendKeys()`, wait for the updated DOM or text:
+
+```java
+driver.findElement(By.id("input")).sendKeys("Harish");
+wait.until(ExpectedConditions.textToBePresentInElementLocated(By.id("previewName"), "Harish"));
+```
+
+---
+
+## 🔍 **10. Page Load ≠ UI Ready**
+
+### ❗ Problem:
+
+Page may load (from browser’s point of view), but UI elements are **still rendering** due to JS.
+
+### ✅ Fix:
+
+Use app-specific ready checks:
+
+```java
+wait.until(driver -> ((JavascriptExecutor) driver)
+    .executeScript("return document.readyState").equals("complete"));
+
+wait.until(ExpectedConditions.invisibilityOfElementLocated(By.id("loading-overlay")));
+```
+
+---
+
+## 🔍 **11. Routing Without Page Reload**
+
+### ❗ Problem:
+
+Single Page Applications (SPA) don’t reload full page — they change **routes** via JS.
+
+`driver.get("url")` doesn’t help mid-test.
+
+### ✅ Fix:
+
+Use **internal navigation**, then wait for URL/text change:
+
+```java
+driver.findElement(By.linkText("Dashboard")).click();
+wait.until(ExpectedConditions.urlContains("/dashboard"));
+```
+
+---
+
+## 🔍 **12. Hidden Elements in DOM**
+
+### ❗ Problem:
+
+Element is in DOM but not visible due to `display: none`.
+
+Click fails with `ElementNotVisibleException`.
+
+### ✅ Fix:
+
+Check if element is displayed:
+
+```java
+if (element.isDisplayed()) {
+    element.click();
+}
+```
+
+Or force-click using JS (careful — use only when safe):
+
+```java
+((JavascriptExecutor) driver).executeScript("arguments[0].click();", element);
+```
+
+---
+
+## 🔍 **13. Detached DOM Elements**
+
+### ❗ Problem:
+
+Angular detaches and reattaches elements on data updates.
+
+Selenium references become “detached”.
+
+### ✅ Fix:
+
+Use retry logic:
+
+```java
+for (int i = 0; i < 3; i++) {
+    try {
+        driver.findElement(By.id("saveBtn")).click();
+        break;
+    } catch (StaleElementReferenceException e) {
+        Thread.sleep(1000);
+    }
+}
+```
+
+Or use FluentWait with `ignoring(StaleElementReferenceException.class)`.
+
+---
+
+## 🔍 **14. Multiple Similar Components**
+
+### ❗ Problem:
+
+Cards or rows look identical. XPath may match the wrong one.
+
+### ✅ Fix:
+
+Use **relative XPath** with context:
+
+```java
+//div[contains(text(),'Harish')]/ancestor::div[@class='user-card']//button[text()='Edit']
+```
+
+Target uniquely using sibling/parent structure.
+
+---
+
+## 🔍 **15. Custom UI Components (Material, Ant, PrimeNG)**
+
+### ❗ Problem:
+
+Inputs aren’t plain HTML. They use custom divs.
+
+Selenium `sendKeys()` won’t work.
+
+### ✅ Fix:
+
+Click input first, then send keys, or use JS:
+
+```java
+driver.findElement(By.cssSelector(".mat-select")).click();
+driver.findElement(By.xpath("//span[text()='Option 1']")).click();
+```
+
+---
+
+## ✅ Summary:
+
+These problems **break most Selenium scripts** in modern apps. The key is:
+
+* Avoid hardcoded waits.
+* Never assume visibility = interactability.
+* Use custom wait conditions.
+* Understand DOM behavior in Angular/React.
+
+---
+
+Would you like me to convert all these points into a clean **PDF notes file** for your interview prep or personal reference?

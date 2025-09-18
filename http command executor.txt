@@ -1,0 +1,943 @@
+// File: StartSession.java
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.remote.SessionId;
+
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class StartSession {
+    public static void main(String[] args) throws IOException {
+        // Start new Chrome browser session
+        WebDriver driver = new ChromeDriver();
+
+        // Get session ID and executor URL
+        SessionId sessionId = ((RemoteWebDriver) driver).getSessionId();
+        String executorURL = ((RemoteWebDriver) driver).getCommandExecutor().getAddressOfRemoteServer().toString();
+
+        System.out.println("Session ID: " + sessionId);
+        System.out.println("Executor URL: " + executorURL);
+
+        // Save session details to file
+        try (FileWriter writer = new FileWriter("session.txt")) {
+            writer.write(sessionId.toString() + "\n");
+            writer.write(executorURL);
+        }
+
+        // Keep the browser open for reattachment
+        driver.get("https://example.com");
+    }
+}
+==============================================================================================================================
+
+
+
+
+
+
+
+
+
+// File: ReconnectAndResumeTest.java
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.remote.HttpCommandExecutor;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.remote.SessionId;
+
+import java.io.*;
+import java.net.URL;
+
+public class ReconnectAndResumeTest {
+    public static void main(String[] args) throws Exception {
+        WebDriver driver;
+        String sessionIdStr = null;
+        String executorURL = null;
+
+        // Read session.txt
+        try (BufferedReader reader = new BufferedReader(new FileReader("session.txt"))) {
+            sessionIdStr = reader.readLine();
+            executorURL = reader.readLine();
+        }
+
+        try {
+            HttpCommandExecutor executor = new HttpCommandExecutor(new URL(executorURL));
+            RemoteWebDriver remoteDriver = new RemoteWebDriver(executor, new org.openqa.selenium.remote.DesiredCapabilities());
+            remoteDriver.setSessionId(sessionIdStr);
+            driver = remoteDriver;
+        } catch (Exception e) {
+            System.out.println("Unable to reconnect. Starting new session.");
+            driver = new ChromeDriver();
+        }
+
+        // Load Excel
+        FileInputStream fis = new FileInputStream("testSteps.xlsx");
+        Workbook workbook = new XSSFWorkbook(fis);
+        Sheet sheet = workbook.getSheetAt(0);
+
+        int lastPassedStep = 0;
+
+        // Identify last executed step with PASS and Execute = Yes
+        for (Row row : sheet) {
+            if (row.getRowNum() == 0) continue; // skip header
+            Cell execCell = row.getCell(5);
+            Cell statusCell = row.getCell(6);
+            if ("Yes".equalsIgnoreCase(execCell.getStringCellValue()) && "PASS".equalsIgnoreCase(statusCell.getStringCellValue())) {
+                lastPassedStep = (int) row.getCell(0).getNumericCellValue();
+            }
+        }
+
+        // Execute from next step
+        for (Row row : sheet) {
+            if (row.getRowNum() == 0) continue;
+            int stepNum = (int) row.getCell(0).getNumericCellValue();
+            if (stepNum <= lastPassedStep) continue;
+
+            String execute = row.getCell(5).getStringCellValue();
+            if (!"Yes".equalsIgnoreCase(execute)) {
+                row.createCell(6).setCellValue("SKIP");
+                continue;
+            }
+
+            String keyword = row.getCell(4).getStringCellValue();
+            String xpath = row.getCell(2).getStringCellValue();
+            String data = row.getCell(3).getStringCellValue();
+
+            try {
+                switch (keyword.toLowerCase()) {
+                    case "click":
+                        WebElement btn = driver.findElement(By.xpath(xpath));
+                        btn.click();
+                        break;
+                    case "input":
+                        WebElement field = driver.findElement(By.xpath(xpath));
+                        field.clear();
+                        field.sendKeys(data);
+                        break;
+                    case "verify":
+                        driver.findElement(By.xpath(xpath)); // simple presence check
+                        break;
+                    case "open":
+                        driver.get(data);
+                        break;
+                    default:
+                        throw new Exception("Unknown keyword: " + keyword);
+                }
+                row.createCell(6).setCellValue("PASS");
+            } catch (Exception e) {
+                row.createCell(6).setCellValue("FAIL");
+                break;
+            }
+        }
+
+        fis.close();
+
+        // Save results back to Excel
+        FileOutputStream fos = new FileOutputStream("testSteps.xlsx");
+        workbook.write(fos);
+        workbook.close();
+        fos.close();
+
+        driver.quit();
+    }
+}
+
+
+
+
+
+✅ `ReconnectAndResumeTest.java` is ready. This Java class:
+
+* Reads session info (`session.txt`)
+* Attempts to reconnect to the existing browser session
+* Loads `testSteps.xlsx` (you must have the Excel file with proper columns)
+* Skips steps with `Execute = No`
+* Continues from the last `PASS` step where `Execute = Yes`
+* Executes based on `Keyword` (Click, Input, Verify, Open)
+* Updates `Status` column with `PASS`, `FAIL`, or `SKIP`
+
+---
+
+Would you like:
+
+1. A **sample `testSteps.xlsx` file** template?
+2. A **Maven project structure** with dependencies included (`Selenium`, `Apache POI`)?
+
+Let me know and I’ll prepare that for you.
+=================================================================================================================================================
+
+
+
+
+
+
+// File: BatchExecutionDriver.java
+import java.io.File;
+import java.io.FileInputStream;
+import java.util.Iterator;
+
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+public class BatchExecutionDriver {
+    public static void main(String[] args) {
+        try {
+            // Define the batch execution sheet location
+            String batchFilePath = "C:/TestScripts/BatchExecution.xlsx";
+            FileInputStream fis = new FileInputStream(new File(batchFilePath));
+            Workbook workbook = new XSSFWorkbook(fis);
+            Sheet sheet = workbook.getSheetAt(0);
+
+            Iterator<Row> rowIterator = sheet.iterator();
+            rowIterator.next(); // skip header
+
+            while (rowIterator.hasNext()) {
+                Row row = rowIterator.next();
+                String filePath = row.getCell(0).getStringCellValue();
+                String status = row.getCell(1).getStringCellValue();
+
+                if ("Yes".equalsIgnoreCase(status)) {
+                    System.out.println("Executing script: " + filePath);
+                    // Call the reusable execution logic
+                    ExecuteScript.run(filePath);
+                } else {
+                    System.out.println("Skipping script: " + filePath);
+                }
+            }
+
+            workbook.close();
+            fis.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
+
+✅ `BatchExecutionDriver.java` is ready!
+
+This file:
+
+* Reads a **batch control Excel** file: `C:/TestScripts/BatchExecution.xlsx`
+* Each row in this file should contain:
+
+  * Column 1: Full path to a test script Excel (`.xlsx`)
+  * Column 2: `Yes` / `No` — whether to execute or skip
+* For each `Yes` row, it will call `ExecuteScript.run(filePath)` to run that test
+
+---
+
+### 🧩 Next Step: `ExecuteScript.java`
+
+Now I’ll modularize your reusable test executor logic from `ReconnectAndResumeTest.java` into a **static method** so it can be reused for every `.xlsx` file.
+
+Would you like me to do that next?
+======================================================================================================================================================
+
+
+
+
+
+✅ `ExecuteScript.java` is now modular and reusable.
+
+This class:
+
+* Takes any `.xlsx` test file path as input
+* Tries to reconnect to the previous session (if available)
+* Reads steps from Excel
+* Executes only those with `Execute = Yes`, starting after the last `PASS`
+* Updates `Status` as `PASS`, `FAIL`, or `SKIP`
+* Can be reused in any batch execution loop
+
+---
+
+### ✅ Complete Execution Flow Now:
+
+```
+BatchExecution.xlsx
+└── File1.xlsx — [Run if Yes]
+└── File2.xlsx — [Skip if No]
+└── File3.xlsx — [Run if Yes]
+         └─▶ step1 (Yes) — PASS
+         └─▶ step2 (Yes) — FAIL
+         └─▶ step3 (Yes) — SKIP
+```
+
+Would you now like me to prepare:
+
+1. ✅ `BatchExecution.xlsx` file (with dummy paths & flags)?
+2. ✅ `pom.xml` file with all required dependencies?
+
+Let me know — both will be ready to plug & run.
+
+
+
+
+
+
+
+
+
+// File: ExecuteScript.java
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.remote.HttpCommandExecutor;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.remote.SessionId;
+
+import java.io.*;
+import java.net.URL;
+
+public class ExecuteScript {
+    public static void run(String excelFilePath) throws Exception {
+        WebDriver driver;
+        String sessionIdStr = null;
+        String executorURL = null;
+
+        // Attempt session reconnect if available
+        try (BufferedReader reader = new BufferedReader(new FileReader("session.txt"))) {
+            sessionIdStr = reader.readLine();
+            executorURL = reader.readLine();
+        } catch (IOException e) {
+            System.out.println("No previous session found. Starting fresh.");
+        }
+
+        try {
+            if (sessionIdStr != null && executorURL != null) {
+                HttpCommandExecutor executor = new HttpCommandExecutor(new URL(executorURL));
+                RemoteWebDriver remoteDriver = new RemoteWebDriver(executor, new org.openqa.selenium.remote.DesiredCapabilities());
+                remoteDriver.setSessionId(sessionIdStr);
+                driver = remoteDriver;
+            } else {
+                driver = new ChromeDriver();
+            }
+        } catch (Exception e) {
+            System.out.println("Unable to reconnect. Starting new session.");
+            driver = new ChromeDriver();
+        }
+
+        FileInputStream fis = new FileInputStream(excelFilePath);
+        Workbook workbook = new XSSFWorkbook(fis);
+        Sheet sheet = workbook.getSheetAt(0);
+
+        int lastPassedStep = 0;
+
+        // Find last passed step
+        for (Row row : sheet) {
+            if (row.getRowNum() == 0) continue;
+            if ("Yes".equalsIgnoreCase(row.getCell(5).getStringCellValue()) &&
+                "PASS".equalsIgnoreCase(row.getCell(6).getStringCellValue())) {
+                lastPassedStep = (int) row.getCell(0).getNumericCellValue();
+            }
+        }
+
+        // Execute remaining steps
+        for (Row row : sheet) {
+            if (row.getRowNum() == 0) continue;
+            int stepNum = (int) row.getCell(0).getNumericCellValue();
+            if (stepNum <= lastPassedStep) continue;
+
+            String execute = row.getCell(5).getStringCellValue();
+            if (!"Yes".equalsIgnoreCase(execute)) {
+                row.createCell(6).setCellValue("SKIP");
+                continue;
+            }
+
+            String keyword = row.getCell(4).getStringCellValue();
+            String xpath = row.getCell(2).getStringCellValue();
+            String data = row.getCell(3).getStringCellValue();
+
+            try {
+                switch (keyword.toLowerCase()) {
+                    case "click":
+                        WebElement btn = driver.findElement(By.xpath(xpath));
+                        btn.click();
+                        break;
+                    case "input":
+                        WebElement field = driver.findElement(By.xpath(xpath));
+                        field.clear();
+                        field.sendKeys(data);
+                        break;
+                    case "verify":
+                        driver.findElement(By.xpath(xpath));
+                        break;
+                    case "open":
+                        driver.get(data);
+                        break;
+                    default:
+                        throw new Exception("Unknown keyword: " + keyword);
+                }
+                row.createCell(6).setCellValue("PASS");
+            } catch (Exception e) {
+                row.createCell(6).setCellValue("FAIL");
+                break;
+            }
+        }
+
+        fis.close();
+        FileOutputStream fos = new FileOutputStream(excelFilePath);
+        workbook.write(fos);
+        workbook.close();
+        fos.close();
+
+        driver.quit();
+    }
+}
+===============================================================================================================================
+
+
+✅ Your `BatchExecution.xlsx` file is ready!
+
+👉 [Download BatchExecution.xlsx](sandbox:/mnt/data/BatchExecution.xlsx)
+
+This file includes:
+
+* Paths to three `.xlsx` test script files
+* An `Execute` column with `Yes` / `No` to control which scripts run
+
+---
+
+Next: I’ll prepare a ready-to-use `pom.xml` with all required dependencies for:
+
+* Selenium
+* Apache POI
+* WebDriverManager (optional)
+
+Shall I include that now?
+=====================================================================================================================================
+✅ `ReportManager.java` is now created. It:
+
+* Generates `TestExecutionReport.html` under `reports/`
+* Appends on re-runs using `setAppendExisting(true)`
+* Configured with a standard theme and readable layout
+
+---
+
+### 🧩 Next Steps:
+
+I’ll now update your `ExecuteScript.java` to:
+
+1. Integrate this ExtentReports instance
+2. Add **step logs** with screenshots using `Log4j` and `ExtentTest`
+3. Reuse the same report across re-runs and append only remaining steps
+
+Let me do that now.
+
+
+// File: ReportManager.java
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.reporter.ExtentHtmlReporter;
+import com.aventstack.extentreports.reporter.configuration.Theme;
+
+public class ReportManager {
+    private static ExtentReports extent;
+
+    public static ExtentReports getInstance() {
+        if (extent == null) {
+            ExtentHtmlReporter htmlReporter = new ExtentHtmlReporter("reports/TestExecutionReport.html");
+            htmlReporter.config().setTheme(Theme.STANDARD);
+            htmlReporter.config().setDocumentTitle("Automation Execution Report");
+            htmlReporter.config().setReportName("Regression Execution");
+            htmlReporter.setAppendExisting(true); // Append on rerun
+
+            extent = new ExtentReports();
+            extent.attachReporter(htmlReporter);
+        }
+        return extent;
+    }
+}
+======================================================================================================================================================
+
+
+
+
+✅ `ExecuteScript.java` now includes:
+
+* 🔥 **ExtentReports** integration (via `ReportManager`)
+* 📸 Screenshot capture on failure with timestamp
+* ✅ Re-attaches to existing report file
+* 📋 Logs each test step as `PASS`, `FAIL`, or `SKIP`
+* 🪵 Can be extended with Log4j logging (`log.info/warn/error`) if needed
+
+---
+
+### 📁 Folder Structure Required:
+
+```
+project-root/
+│
+├── reports/
+│   ├── TestExecutionReport.html
+│   └── screenshots/
+├── session.txt
+├── testSteps.xlsx
+├── BatchExecution.xlsx
+└── src/
+```
+
+---
+
+Would you now like the final `pom.xml` with:
+
+* Selenium
+* Apache POI
+* ExtentReports
+* Log4j
+* WebDriverManager (optional)
+
+Let me prepare that if you say yes.
+
+
+
+// File: ExecuteScript.java
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.openqa.selenium.*;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.remote.HttpCommandExecutor;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.remote.SessionId;
+
+import com.aventstack.extentreports.ExtentReports;
+import com.aventstack.extentreports.ExtentTest;
+import com.aventstack.extentreports.Status;
+import com.aventstack.extentreports.MediaEntityBuilder;
+
+import java.io.*;
+import java.net.URL;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+public class ExecuteScript {
+    public static void run(String excelFilePath) throws Exception {
+        WebDriver driver;
+        String sessionIdStr = null;
+        String executorURL = null;
+
+        ExtentReports extent = ReportManager.getInstance();
+        ExtentTest test = extent.createTest(new File(excelFilePath).getName());
+
+        // Attempt session reconnect if available
+        try (BufferedReader reader = new BufferedReader(new FileReader("session.txt"))) {
+            sessionIdStr = reader.readLine();
+            executorURL = reader.readLine();
+        } catch (IOException e) {
+            test.warning("No previous session found. Starting fresh.");
+        }
+
+        try {
+            if (sessionIdStr != null && executorURL != null) {
+                HttpCommandExecutor executor = new HttpCommandExecutor(new URL(executorURL));
+                RemoteWebDriver remoteDriver = new RemoteWebDriver(executor, new org.openqa.selenium.remote.DesiredCapabilities());
+                remoteDriver.setSessionId(sessionIdStr);
+                driver = remoteDriver;
+                test.info("Reconnected to existing session");
+            } else {
+                driver = new ChromeDriver();
+                test.info("Started new ChromeDriver session");
+            }
+        } catch (Exception e) {
+            test.warning("Unable to reconnect. Starting new session.");
+            driver = new ChromeDriver();
+        }
+
+        FileInputStream fis = new FileInputStream(excelFilePath);
+        Workbook workbook = new XSSFWorkbook(fis);
+        Sheet sheet = workbook.getSheetAt(0);
+
+        int lastPassedStep = 0;
+
+        for (Row row : sheet) {
+            if (row.getRowNum() == 0) continue;
+            if ("Yes".equalsIgnoreCase(row.getCell(5).getStringCellValue()) &&
+                "PASS".equalsIgnoreCase(row.getCell(6).getStringCellValue())) {
+                lastPassedStep = (int) row.getCell(0).getNumericCellValue();
+            }
+        }
+
+        for (Row row : sheet) {
+            if (row.getRowNum() == 0) continue;
+            int stepNum = (int) row.getCell(0).getNumericCellValue();
+            if (stepNum <= lastPassedStep) continue;
+
+            String execute = row.getCell(5).getStringCellValue();
+            if (!"Yes".equalsIgnoreCase(execute)) {
+                row.createCell(6).setCellValue("SKIP");
+                test.skip("Step " + stepNum + " skipped as per Execute = No");
+                continue;
+            }
+
+            String description = row.getCell(1).getStringCellValue();
+            String keyword = row.getCell(4).getStringCellValue();
+            String xpath = row.getCell(2).getStringCellValue();
+            String data = row.getCell(3).getStringCellValue();
+
+            try {
+                switch (keyword.toLowerCase()) {
+                    case "click":
+                        WebElement btn = driver.findElement(By.xpath(xpath));
+                        btn.click();
+                        break;
+                    case "input":
+                        WebElement field = driver.findElement(By.xpath(xpath));
+                        field.clear();
+                        field.sendKeys(data);
+                        break;
+                    case "verify":
+                        driver.findElement(By.xpath(xpath));
+                        break;
+                    case "open":
+                        driver.get(data);
+                        break;
+                    default:
+                        throw new Exception("Unknown keyword: " + keyword);
+                }
+                row.createCell(6).setCellValue("PASS");
+                test.pass("Step " + stepNum + ": " + description);
+            } catch (Exception e) {
+                row.createCell(6).setCellValue("FAIL");
+                String screenshotPath = takeScreenshot(driver, "Step_" + stepNum);
+                test.fail("Step " + stepNum + ": " + description + " FAILED",
+                        MediaEntityBuilder.createScreenCaptureFromPath(screenshotPath).build());
+                break;
+            }
+        }
+
+        fis.close();
+        FileOutputStream fos = new FileOutputStream(excelFilePath);
+        workbook.write(fos);
+        workbook.close();
+        fos.close();
+
+        extent.flush();
+        driver.quit();
+    }
+
+    private static String takeScreenshot(WebDriver driver, String name) {
+        try {
+            TakesScreenshot ts = (TakesScreenshot) driver;
+            File src = ts.getScreenshotAs(OutputType.FILE);
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+            String path = "reports/screenshots/" + name + "_" + timestamp + ".png";
+            File dest = new File(path);
+            dest.getParentFile().mkdirs();
+            org.openqa.selenium.io.FileHandler.copy(src, dest);
+            return path;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+}
+======================================================================================================================================================
+
+Here is your required `pom.xml` file with dependencies for:
+
+✅ Selenium
+✅ Apache POI (Excel)
+✅ ExtentReports
+✅ Log4j (for future use or extension)
+✅ WebDriverManager (optional, auto-handles driver binaries)
+
+---
+
+### ✅ `pom.xml`
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.automation</groupId>
+  <artifactId>selenium-batch-runner</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <dependencies>
+    <!-- Selenium WebDriver -->
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-java</artifactId>
+      <version>4.21.0</version>
+    </dependency>
+
+    <!-- Apache POI for Excel -->
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>5.2.5</version>
+    </dependency>
+
+    <!-- ExtentReports -->
+    <dependency>
+      <groupId>com.aventstack</groupId>
+      <artifactId>extentreports</artifactId>
+      <version>5.1.1</version>
+    </dependency>
+
+    <!-- Log4j Core -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.20.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>2.20.0</version>
+    </dependency>
+
+    <!-- WebDriverManager (optional: auto handles driver binaries) -->
+    <dependency>
+      <groupId>io.github.bonigarcia</groupId>
+      <artifactId>webdrivermanager</artifactId>
+      <version>5.7.0</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Compiler plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <source>11</source>
+          <target>11</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+```
+
+---
+
+### 📝 To Use:
+
+1. Save this as `pom.xml` in your project root.
+2. Run `mvn clean install` or open in IntelliJ/Eclipse as a Maven project.
+3. Ensure `screenshots/` and `reports/` folders are writable and pre-created (or auto-created by code).
+
+---
+
+Would you like:
+
+* A Log4j logging utility file (`LoggerUtil.java`) for use in your code?
+* A ZIP of all Java files (`ExecuteScript`, `BatchExecution`, `ReportManager`, etc.)?
+
+Let me know.
+===================================================================================================================================================
+Here is your required `pom.xml` file with dependencies for:
+
+✅ Selenium
+✅ Apache POI (Excel)
+✅ ExtentReports
+✅ Log4j (for future use or extension)
+✅ WebDriverManager (optional, auto-handles driver binaries)
+
+---
+
+### ✅ `pom.xml`
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.automation</groupId>
+  <artifactId>selenium-batch-runner</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <dependencies>
+    <!-- Selenium WebDriver -->
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-java</artifactId>
+      <version>4.21.0</version>
+    </dependency>
+
+    <!-- Apache POI for Excel -->
+    <dependency>
+      <groupId>org.apache.poi</groupId>
+      <artifactId>poi-ooxml</artifactId>
+      <version>5.2.5</version>
+    </dependency>
+
+    <!-- ExtentReports -->
+    <dependency>
+      <groupId>com.aventstack</groupId>
+      <artifactId>extentreports</artifactId>
+      <version>5.1.1</version>
+    </dependency>
+
+    <!-- Log4j Core -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+      <version>2.20.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+      <version>2.20.0</version>
+    </dependency>
+
+    <!-- WebDriverManager (optional: auto handles driver binaries) -->
+    <dependency>
+      <groupId>io.github.bonigarcia</groupId>
+      <artifactId>webdrivermanager</artifactId>
+      <version>5.7.0</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Compiler plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <source>11</source>
+          <target>11</target>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>
+```
+
+---
+
+### 📝 To Use:
+
+1. Save this as `pom.xml` in your project root.
+2. Run `mvn clean install` or open in IntelliJ/Eclipse as a Maven project.
+3. Ensure `screenshots/` and `reports/` folders are writable and pre-created (or auto-created by code).
+
+---
+
+Would you like:
+
+* A Log4j logging utility file (`LoggerUtil.java`) for use in your code?
+* A ZIP of all Java files (`ExecuteScript`, `BatchExecution`, `ReportManager`, etc.)?
+
+Let me know.
+
+=========================================================================================================================================
+✅ `LoggerUtil.java` is now created for centralized Log4j logging.
+
+### 🔧 To activate Log4j logging:
+
+1. Create a `log4j2.xml` file in `src/main/resources/`
+2. Here's a sample `log4j2.xml`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%d{HH:mm:ss} %-5level %logger{36} - %msg%n" />
+    </Console>
+    <File name="FileLogger" fileName="logs/automation-log.log" append="true">
+      <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n"/>
+    </File>
+  </Appenders>
+
+  <Loggers>
+    <Logger name="AUTOMATION_LOGGER" level="info" additivity="false">
+      <AppenderRef ref="Console" />
+      <AppenderRef ref="FileLogger" />
+    </Logger>
+    <Root level="error">
+      <AppenderRef ref="Console" />
+    </Root>
+  </Loggers>
+</Configuration>
+```
+
+### 📁 Directory Structure (must have):
+
+```
+project-root/
+│
+├── logs/                     # <- Log4j log files
+├── reports/                  # <- ExtentReports HTML + screenshots
+├── src/
+│   └── main/
+│       ├── java/
+│       │   └── ...classes
+│       └── resources/
+│           └── log4j2.xml
+```
+
+---
+
+✅ Now you're fully ready with:
+
+* Batch control Excel
+* Reconnectable execution
+* ExtentReports with screenshots and resume logic
+* Log4j for centralized logging
+
+Would you like me to ZIP all `.java` files and the configuration templates for easy download?
+=========================================================================================================================================
+// File: LoggerUtil.java
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+public class LoggerUtil {
+    private static final Logger logger = LogManager.getLogger("AUTOMATION_LOGGER");
+
+    public static void info(String message) {
+        logger.info(message);
+    }
+
+    public static void warn(String message) {
+        logger.warn(message);
+    }
+
+    public static void error(String message, Throwable t) {
+        logger.error(message, t);
+    }
+
+    public static void debug(String message) {
+        logger.debug(message);
+    }
+
+    public static Logger getLogger() {
+        return logger;
+    }
+}
+===========================================================================================================================================
+✅ Your Java utility files and configuration are now bundled!
+
+👉 [Download SeleniumBatchRunner.zip](sandbox:/mnt/data/SeleniumBatchRunner.zip)
+
+This ZIP includes:
+
+* `ReportManager.java` – for ExtentReports
+* `LoggerUtil.java` – for centralized Log4j logging
+* `log4j2.xml` – Log4j configuration file
+
+---
+
+📦 Place `log4j2.xml` inside:
+`src/main/resources/`
+
+📁 Create the required folders:
+
+* `logs/` for `.log` files
+* `reports/` for ExtentReports and screenshots
+
+Let me know if you'd like a complete project structure or Git repo template next.

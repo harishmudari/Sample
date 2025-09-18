@@ -1,0 +1,19 @@
+It is one of the interfaces in SELENIUM which has below 2 methods.
+1. executeScript()
+2. executeAsyncScript()
+We use JavascriptExecutor when we fail to perform some actions using SELENIUM.
+Write a script to enter a text in a textbox which is in disabled mode?
+Using sendKeys() method of WEBELEMENT interface, if we try to enter any text in a greyed out
+box OR disabled box, we get INVALIDELEMENTSTATEEXCEPTION.
+Using executeScript() of JavascriptExecutor interface, we can enter text in a disabled textbox
+
+what are the usage of JavascriptExecutor?
+1. To scroll on the webpage,
+2. To handle the disabled elements,
+3. To use as an alternate solution when SELENIUM inbuilt methods [e.g. clear(), click(),
+sendKeys() ] doesn’t work.
+In SELENIUM, we don’t have any method to scroll up or down on the webpage, in such case, we
+can use JavascriptExecutor.
+Steps to run javascript manually on browser webpage
+1. Open the required page in the browser and press F12 from keyboard.
+2. Navigate to Console tab, type the javascript statement and press Enter key

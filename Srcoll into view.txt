@@ -1,0 +1,40 @@
+I'll help you create a Java Selenium utility for scrolling to elements when needed using JavaScriptExecutor's `scrollIntoView()` method.I've created a comprehensive `ScrollToElementKeyword` utility class for Java Selenium that provides various methods for scrolling to elements using JavaScriptExecutor. Here are the key features:
+
+## Main Methods:
+
+1. **Basic Scrolling:**
+   - `scrollToElement(WebElement)` - Scroll to element directly
+   - `scrollToElement(By locator)` - Find element by locator and scroll
+
+2. **Enhanced Scrolling:**
+   - `scrollToElementSmooth()` - Smooth scroll animation
+   - `scrollToElementWithOptions()` - Custom scroll behavior, block positioning, etc.
+   - `scrollToElementIfNeeded()` - Only scroll if element is not in viewport
+
+3. **Interactive Scrolling:**
+   - `scrollToElementAndWaitClickable()` - Scroll and wait for element to be clickable
+   - Returns boolean or WebElement based on success
+
+4. **Utility Methods:**
+   - `scrollToTop()` / `scrollToBottom()` - Page navigation
+   - `scrollByPixels(x, y)` - Precise pixel-based scrolling
+   - `getElementViewportPosition()` - Get element position info
+
+## Key Benefits:
+
+- **Smart Detection:** Checks if element is already visible before scrolling
+- **Error Handling:** Comprehensive try-catch blocks with meaningful error messages
+- **Flexible Options:** Multiple scroll behaviors (smooth, instant, centered, etc.)
+- **Wait Integration:** Built-in WebDriverWait for reliable element interaction
+- **Thread Safety:** Includes appropriate waits for scroll completion
+
+## Usage Example:
+```java
+ScrollToElementKeyword scrollUtil = new ScrollToElementKeyword(driver);
+WebElement button = scrollUtil.scrollToElementAndWaitClickable(By.id("submit"));
+if (button != null) {
+    button.click();
+}
+```
+
+This utility handles common scrolling scenarios in Selenium automation and provides a reusable keyword-driven approach for your test framework.

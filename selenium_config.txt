@@ -1,0 +1,410 @@
+# Selenium Configuration File (selenium.properties)
+# Place this file in src/main/resources or src/test/resources
+
+# Timeout Settings (in seconds)
+implicit.wait=10
+explicit.wait=30
+page.load.timeout=60
+script.timeout=30
+
+# Retry Settings
+retry.count=3
+retry.delay.seconds=2
+
+# File Paths
+screenshot.path=target/screenshots/
+download.path=target/downloads/
+report.path=target/reports/
+
+# Browser Settings
+default.browser=chrome
+window.maximize=true
+headless.mode=false
+
+# Test Environment
+base.url=https://example.com
+test.environment=qa
+
+# Logging
+log.level=INFO
+log.file.path=target/logs/selenium.log
+
+# ==================================================
+# USAGE EXAMPLES
+# ==================================================
+
+/*
+// Example 1: Basic Chrome Setup with all browser issues handled
+public class TestExample {
+    
+    @BeforeMethod
+    public void setUp() {
+        // Initialize Chrome with all enterprise configurations
+        boolean success = EnterpriseSeleniumKeywords.initializeChromeDriver(
+            false,  // headless
+            false,  // allowNotifications  
+            false,  // allowGeolocation
+            true    // ignoreCertificateErrors
+        );
+        
+        if (!success) {
+            throw new RuntimeException("Failed to initialize Chrome driver");
+        }
+    }
+    
+    @Test
+    public void testWebsiteLogin() {
+        // Navigate to website
+        Assert.assertTrue(
+            EnterpriseSeleniumKeywords.navigateToUrl("https://example.com/login")
+        );
+        
+        // Enter username
+        Assert.assertTrue(
+            EnterpriseSeleniumKeywords.enterText(By.id("username"), "testuser")
+        );
+        
+        // Enter password
+        Assert.assertTrue(
+            EnterpriseSeleniumKeywords.enterText(By.id("password"), "password123")
+        );
+        
+        // Click login button with smart click (handles all click scenarios)
+        Assert.assertTrue(
+            EnterpriseSeleniumKeywords.clickElementSmart(By.id("loginBtn"))
+        );
+        
+        // Wait for dashboard to load
+        Assert.assertTrue(
+            EnterpriseSeleniumKeywords.waitForElementVisible(By.id("dashboard"), 15)
+        );
+        
+        // Validate successful login
+        String welcomeText = EnterpriseSeleniumKeywords.getElementText(By.id("welcome"));
+        Assert.assertNotNull(welcomeText);
+        Assert.assertTrue(welcomeText.contains("Welcome"));
+    }
+    
+    @AfterMethod
+    public void tearDown() {
+        EnterpriseSeleniumKeywords.quitDriver();
+    }
+}
+
+// Example 2: Advanced Firefox Setup for Banking/Financial Applications
+public class SecureBankingTest {
+    
+    @BeforeMethod
+    public void setUpSecureBrowser() {
+        // Firefox with maximum security for banking applications
+        boolean success = EnterpriseSeleniumKeywords.initializeFirefoxDriver(
+            false,  // headless - keep visible for security
+            false,  // allowNotifications - disabled for security
+            false,  // allowGeolocation - disabled for privacy
+            true    // ignoreCertificateErrors - handle SSL issues
+        );
+        
+        if (!success) {
+            throw new RuntimeException("Failed to initialize secure Firefox driver");
+        }
+    }
+    
+    @Test
+    public void testSecureTransaction() {
+        // Navigate to banking portal
+        EnterpriseSeleniumKeywords.navigateToUrl("https://securebank.com");
+        
+        // Handle any SSL certificate warnings automatically
+        // (Already handled in driver initialization)
+        
+        // Login process with enhanced security
+        EnterpriseSeleniumKeywords.enterText(By.name("userId"), "12345");
+        EnterpriseSeleniumKeywords.enterText(By.name("password"), "securePass");
+        EnterpriseSeleniumKeywords.clickElementSmart(By.id("loginSubmit"));
+        
+        // Handle any notification popups
+        EnterpriseSeleniumKeywords.handleBrowserNotification(false); // dismiss
+        
+        // Continue with transaction...
+    }
+}
+
+// Example 3: Headless Chrome for CI/CD Pipeline
+public class CIPipelineTest {
+    
+    @BeforeMethod
+    public void setUpHeadlessBrowser() {
+        // Headless Chrome optimized for CI/CD
+        boolean success = EnterpriseSeleniumKeywords.initializeChromeDriver(
+            true,   // headless - for CI/CD
+            false,  // allowNotifications - not needed in CI
+            false,  // allowGeolocation - not needed
+            true    // ignoreCertificateErrors - handle dev/staging SSL
+        );
+        
+        Assert.assertTrue("Driver initialization failed", success);
+    }
+    
+    @Test
+    public void testAPIIntegration() {
+        EnterpriseSeleniumKeywords.navigateToUrl("https://api-dashboard.test.com");
+        
+        // Test API endpoints through web interface
+        EnterpriseSeleniumKeywords.clickElementSmart(By.xpath("//button[text()='Test API']"));
+        
+        // Wait for results with custom timeout
+        boolean resultsVisible = EnterpriseSeleniumKeywords.waitForElementVisible(
+            By.id("apiResults"), 30
+        );
+        Assert.assertTrue("API results not displayed", resultsVisible);
+        
+        // Validate response
+        String apiResponse = EnterpriseSeleniumKeywords.getElementText(By.id("responseText"));
+        Assert.assertNotNull("API response is null", apiResponse);
+    }
+}
+
+// Example 4: Mobile-First Responsive Testing
+public class ResponsiveTest {
+    
+    @Test
+    public void testMobileView() {
+        // Initialize with mobile viewport simulation
+        EnterpriseSeleniumKeywords.initializeChromeDriver(false, false, true, true);
+        
+        WebDriver driver = EnterpriseSeleniumKeywords.getDriver();
+        
+        // Set mobile viewport
+        driver.manage().window().setSize(new Dimension(375, 667)); // iPhone 6/7/8
+        
+        EnterpriseSeleniumKeywords.navigateToUrl("https://responsive-site.com");
+        
+        // Test mobile navigation
+        boolean hamburgerVisible = EnterpriseSeleniumKeywords.waitForElementVisible(
+            By.className("mobile-menu-toggle"), 10
+        );
+        
+        if (hamburgerVisible) {
+            EnterpriseSeleniumKeywords.clickElementSmart(By.className("mobile-menu-toggle"));
+        }
+        
+        // Continue mobile-specific tests...
+    }
+    
+    @Test
+    public void testTabletView() {
+        EnterpriseSeleniumKeywords.initializeChromeDriver(false, false, false, true);
+        
+        WebDriver driver = EnterpriseSeleniumKeywords.getDriver();
+        driver.manage().window().setSize(new Dimension(768, 1024)); // iPad
+        
+        // Continue tablet-specific tests...
+    }
+}
+
+// Example 5: File Download Testing
+public class FileDownloadTest {
+    
+    @Test
+    public void testPDFDownload() {
+        // Initialize with download handling
+        EnterpriseSeleniumKeywords.initializeChromeDriver(false, false, false, true);
+        
+        EnterpriseSeleniumKeywords.navigateToUrl("https://document-site.com");
+        
+        // Click download link
+        EnterpriseSeleniumKeywords.clickElementSmart(By.linkText("Download PDF"));
+        
+        // Wait for download to complete
+        try {
+            Thread.sleep(5000); // In real scenario, implement proper download wait
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        
+        // Verify file exists (implement file system check)
+        // File downloadedFile = new File(downloadPath + "document.pdf");
+        // Assert.assertTrue("File not downloaded", downloadedFile.exists());
+    }
+}
+
+// Example 6: Cross-Browser Testing with TestNG
+public class CrossBrowserTest {
+    
+    @Parameters({"browser", "headless"})
+    @BeforeMethod
+    public void setUp(@Optional("chrome") String browser, 
+                     @Optional("false") boolean headless) {
+        
+        boolean success;
+        
+        switch (browser.toLowerCase()) {
+            case "firefox":
+                success = EnterpriseSeleniumKeywords.initializeFirefoxDriver(
+                    headless, false, false, true);
+                break;
+            case "chrome":
+            default:
+                success = EnterpriseSeleniumKeywords.initializeChromeDriver(
+                    headless, false, false, true);
+                break;
+        }
+        
+        Assert.assertTrue("Browser initialization failed for: " + browser, success);
+    }
+    
+    @Test
+    public void testCrossBrowserCompatibility() {
+        EnterpriseSeleniumKeywords.navigateToUrl("https://cross-browser-test.com");
+        
+        // Common test steps that work across browsers
+        EnterpriseSeleniumKeywords.clickElementSmart(By.id("testButton"));
+        
+        String result = EnterpriseSeleniumKeywords.getElementText(By.id("result"));
+        Assert.assertEquals("Success", result);
+    }
+}
+
+// Example 7: Performance Testing Integration
+public class PerformanceTest {
+    
+    private long pageLoadStart;
+    
+    @BeforeMethod
+    public void setUp() {
+        EnterpriseSeleniumKeywords.initializeChromeDriver(false, false, false, true);
+        pageLoadStart = System.currentTimeMillis();
+    }
+    
+    @Test
+    public void testPageLoadPerformance() {
+        EnterpriseSeleniumKeywords.navigateToUrl("https://performance-test-site.com");
+        
+        // Wait for page to fully load
+        EnterpriseSeleniumKeywords.waitForPageLoad();
+        
+        long pageLoadTime = System.currentTimeMillis() - pageLoadStart;
+        
+        // Assert page loads within 5 seconds
+        Assert.assertTrue("Page load time too slow: " + pageLoadTime + "ms", 
+                         pageLoadTime < 5000);
+        
+        // Test interactive elements
+        boolean buttonClickable = EnterpriseSeleniumKeywords.waitForElementVisible(
+            By.id("interactiveButton"), 3
+        );
+        
+        Assert.assertTrue("Interactive elements not ready", buttonClickable);
+    }
+}
+
+// Example 8: Error Handling and Recovery
+public class RobustTest {
+    
+    @Test
+    public void testWithErrorRecovery() {
+        EnterpriseSeleniumKeywords.initializeChromeDriver(false, false, false, true);
+        
+        try {
+            // This might fail due to network issues
+            boolean navigated = EnterpriseSeleniumKeywords.navigateToUrl("https://unreliable-site.com");
+            
+            if (!navigated) {
+                // Fallback to backup URL
+                navigated = EnterpriseSeleniumKeywords.navigateToUrl("https://backup-site.com");
+                Assert.assertTrue("Both primary and backup sites failed", navigated);
+            }
+            
+            // Try to click an element that might not exist
+            boolean clicked = EnterpriseSeleniumKeywords.clickElementSmart(By.id("submitBtn"));
+            
+            if (!clicked) {
+                // Try alternative locator
+                clicked = EnterpriseSeleniumKeywords.clickElementSmart(By.name("submit"));
+                Assert.assertTrue("Could not find submit button with any locator", clicked);
+            }
+            
+        } catch (EnterpriseSeleniumKeywords.CustomElementNotFoundException e) {
+            // Handle custom exceptions
+            System.out.println("Element not found: " + e.getMessage());
+            // Take screenshot for debugging
+            EnterpriseSeleniumKeywords.takeScreenshotOnFailure("testWithErrorRecovery");
+            throw e;
+        }
+    }
+    
+    @AfterMethod
+    public void tearDown() {
+        EnterpriseSeleniumKeywords.quitDriver();
+    }
+}
+
+// Example 9: Data-Driven Testing
+public class DataDrivenTest {
+    
+    @DataProvider(name = "loginData")
+    public Object[][] getLoginData() {
+        return new Object[][]{
+            {"user1", "pass1", "Welcome User1"},
+            {"user2", "pass2", "Welcome User2"},
+            {"admin", "admin123", "Welcome Admin"}
+        };
+    }
+    
+    @Test(dataProvider = "loginData")
+    public void testMultipleLogins(String username, String password, String expectedWelcome) {
+        EnterpriseSeleniumKeywords.initializeChromeDriver(false, false, false, true);
+        
+        EnterpriseSeleniumKeywords.navigateToUrl("https://login-test.com");
+        
+        // Clear any existing data
+        EnterpriseSeleniumKeywords.enterText(By.id("username"), "");
+        EnterpriseSeleniumKeywords.enterText(By.id("password"), "");
+        
+        // Enter test data
+        EnterpriseSeleniumKeywords.enterText(By.id("username"), username);
+        EnterpriseSeleniumKeywords.enterText(By.id("password"), password);
+        
+        EnterpriseSeleniumKeywords.clickElementSmart(By.id("loginBtn"));
+        
+        // Validate expected result
+        String actualWelcome = EnterpriseSeleniumKeywords.getElementText(By.id("welcomeMsg"));
+        Assert.assertEquals(actualWelcome, expectedWelcome);
+        
+        // Logout for next iteration
+        EnterpriseSeleniumKeywords.clickElementSmart(By.id("logoutBtn"));
+    }
+}
+
+// Example 10: Parallel Execution with ThreadLocal
+public class ParallelTest {
+    
+    @BeforeMethod
+    public void setUp() {
+        // ThreadLocal ensures each thread gets its own WebDriver instance
+        EnterpriseSeleniumKeywords.initializeChromeDriver(true, false, false, true);
+    }
+    
+    @Test(threadPoolSize = 3, invocationCount = 9)
+    public void testParallelExecution() {
+        String threadName = Thread.currentThread().getName();
+        System.out.println("Running test in thread: " + threadName);
+        
+        EnterpriseSeleniumKeywords.navigateToUrl("https://parallel-test.com");
+        
+        // Each thread will have its own WebDriver instance
+        WebDriver driver = EnterpriseSeleniumKeywords.getDriver();
+        System.out.println("Driver instance: " + driver.hashCode() + " in thread: " + threadName);
+        
+        EnterpriseSeleniumKeywords.clickElementSmart(By.id("testBtn"));
+        
+        String result = EnterpriseSeleniumKeywords.getElementText(By.id("result"));
+        Assert.assertNotNull("Result should not be null in " + threadName, result);
+    }
+    
+    @AfterMethod
+    public void tearDown() {
+        EnterpriseSeleniumKeywords.quitDriver();
+    }
+}
+*/

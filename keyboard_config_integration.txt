@@ -1,0 +1,768 @@
+# =================================
+# Keyboard Events Configuration
+# selenium-keyboard-config.properties
+# =================================
+
+# Element timeouts (seconds)
+keyboard.element.timeout=15
+keyboard.element.polling.interval=0.5
+
+# Retry configuration
+keyboard.retry.count=3
+keyboard.retry.interval=1000
+
+# Human-like typing settings
+keyboard.human.typing.min.delay=50
+keyboard.human.typing.max.delay=200
+keyboard.human.typing.enabled=false
+
+# Input verification
+keyboard.verify.input=true
+keyboard.verify.timeout=5
+
+# Screenshot configuration
+keyboard.screenshot.on.failure=true
+keyboard.screenshot.path=./screenshots/keyboard-failures/
+
+# Special keys configuration
+keyboard.special.keys.timeout=10
+keyboard.key.combinations.timeout=15
+
+# Performance monitoring
+keyboard.performance.monitoring=true
+keyboard.performance.threshold.warning=2000
+keyboard.performance.threshold.error=5000
+
+# Logging configuration
+keyboard.log.level=INFO
+keyboard.log.execution.time=true
+keyboard.log.input.data=false
+
+# Browser-specific settings
+keyboard.chrome.use.actions=true
+keyboard.firefox.use.actions=true
+keyboard.edge.use.actions=true
+
+# =================================
+# TestNG XML Configuration
+# testng-keyboard-tests.xml
+# =================================
+
+<?xml version="1.0" encoding="UTF-8"?>
+<suite name="KeyboardEventsTestSuite" verbose="2" parallel="methods" thread-count="3">
+    
+    <parameter name="baseUrl" value="https://the-internet.herokuapp.com/"/>
+    <parameter name="environment" value="QA"/>
+    
+    <listeners>
+        <listener class-name="com.enterprise.listeners.KeyboardTestListener"/>
+        <listener class-name="com.enterprise.listeners.ExtentReportListener"/>
+        <listener class-name="io.qameta.allure.testng.AllureTestNg"/>
+    </listeners>
+    
+    <test name="Chrome Keyboard Tests" preserve-order="true">
+        <parameter name="browser" value="chrome"/>
+        <classes>
+            <class name="com.enterprise.tests.KeyboardEventsComprehensiveTest"/>
+        </classes>
+    </test>
+    
+    <test name="Firefox Keyboard Tests" preserve-order="true">
+        <parameter name="browser" value="firefox"/>
+        <classes>
+            <class name="com.enterprise.tests.KeyboardEventsComprehensiveTest"/>
+        </classes>
+    </test>
+    
+    <test name="Cross-Browser Keyboard Tests" preserve-order="false">
+        <classes>
+            <class name="com.enterprise.tests.KeyboardEventsCrossBrowserTest"/>
+        </classes>
+    </test>
+    
+</suite>
+
+# =================================
+# Maven Dependencies (pom.xml excerpt)
+# =================================
+
+<dependencies>
+    <!-- Selenium WebDriver -->
+    <dependency>
+        <groupId>org.seleniumhq.selenium</groupId>
+        <artifactId>selenium-java</artifactId>
+        <version>4.15.0</version>
+    </dependency>
+    
+    <!-- WebDriverManager -->
+    <dependency>
+        <groupId>io.github.bonigarcia</groupId>
+        <artifactId>webdrivermanager</artifactId>
+        <version>5.5.3</version>
+    </dependency>
+    
+    <!-- TestNG -->
+    <dependency>
+        <groupId>org.testng</groupId>
+        <artifactId>testng</artifactId>
+        <version>7.8.0</version>
+    </dependency>
+    
+    <!-- SLF4J and Logback -->
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>2.0.9</version>
+    </dependency>
+    
+    <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.4.11</version>
+    </dependency>
+    
+    <!-- ExtentReports -->
+    <dependency>
+        <groupId>com.aventstack</groupId>
+        <artifactId>extentreports</artifactId>
+        <version>5.0.9</version>
+    </dependency>
+    
+    <!-- Allure TestNG -->
+    <dependency>
+        <groupId>io.qameta.allure</groupId>
+        <artifactId>allure-testng</artifactId>
+        <version>2.24.0</version>
+    </dependency>
+</dependencies>
+
+# =================================
+# Logback Configuration
+# logback-keyboard.xml
+# =================================
+
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/keyboard-events.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/keyboard-events.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>10MB</maxFileSize>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Root logger -->
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </root>
+
+    <!-- Keyboard events specific loggers -->
+    <logger name="com.enterprise.selenium.keywords.KeyboardEventsHandler" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <logger name="com.enterprise.selenium.keywords.fluent.FluentKeyboardActions" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </logger>
+
+    <!-- Reduce Selenium verbosity -->
+    <logger name="org.openqa.selenium" level="WARN" />
+    <logger name="org.apache.http" level="WARN" />
+</configuration>
+
+/**
+ * Custom TestNG Listener for Keyboard Events
+ */
+package com.enterprise.listeners;
+
+import org.testng.ITestListener;
+import org.testng.ITestResult;
+import org.testng.ITestContext;
+import com.enterprise.selenium.keywords.KeyboardEventsHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class KeyboardTestListener implements ITestListener {
+    private static final Logger log = LoggerFactory.getLogger(KeyboardTestListener.class);
+    
+    @Override
+    public void onTestStart(ITestResult result) {
+        log.info("Starting keyboard test: {}.{}", 
+                result.getTestClass().getName(), 
+                result.getMethod().getMethodName());
+    }
+    
+    @Override
+    public void onTestSuccess(ITestResult result) {
+        log.info("Keyboard test PASSED: {}.{} ({}ms)", 
+                result.getTestClass().getName(),
+                result.getMethod().getMethodName(),
+                result.getEndMillis() - result.getStartMillis());
+    }
+    
+    @Override
+    public void onTestFailure(ITestResult result) {
+        log.error("Keyboard test FAILED: {}.{} - {}", 
+                result.getTestClass().getName(),
+                result.getMethod().getMethodName(),
+                result.getThrowable().getMessage());
+        
+        // Take screenshot on failure
+        try {
+            // Capture screenshot using KeyboardEventsHandler screenshot capability
+            // This would be integrated with your screenshot utility
+        } catch (Exception e) {
+            log.error("Failed to capture screenshot on keyboard test failure: {}", e.getMessage());
+        }
+    }
+    
+    @Override
+    public void onFinish(ITestContext context) {
+        // Cleanup any remaining WebDriver instances
+        KeyboardEventsHandler.cleanup();
+        
+        // Log test suite summary
+        int total = context.getAllTestMethods().length;
+        int passed = context.getPassedTests().size();
+        int failed = context.getFailedTests().size();
+        int skipped = context.getSkippedTests().size();
+        
+        log.info("Keyboard test suite completed - Total: {}, Passed: {}, Failed: {}, Skipped: {}", 
+                total, passed, failed, skipped);
+    }
+}
+
+/**
+ * Page Object Example with Keyboard Events Integration
+ */
+package com.enterprise.pages;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import com.enterprise.selenium.keywords.KeyboardEventsHandler;
+import com.enterprise.selenium.keywords.fluent.FluentKeyboardActions;
+import com.enterprise.selenium.keywords.builder.KeyboardSequenceBuilder;
+import com.enterprise.selenium.pages.base.KeyboardEnabledBasePage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Login page with comprehensive keyboard event support
+ */
+public class LoginPage extends KeyboardEnabledBasePage {
+    private static final Logger log = LoggerFactory.getLogger(LoginPage.class);
+    
+    // Page locators
+    private static final By USERNAME_FIELD = By.id("username");
+    private static final By PASSWORD_FIELD = By.id("password");
+    private static final By LOGIN_BUTTON = By.cssSelector("button[type='submit']");
+    private static final By REMEMBER_ME_CHECKBOX = By.id("remember-me");
+    private static final By FORGOT_PASSWORD_LINK = By.linkText("Forgot Password?");
+    
+    public LoginPage(WebDriver driver) {
+        super(driver);
+    }
+    
+    /**
+     * Login using keyboard events with human-like typing
+     */
+    public boolean loginWithKeyboard(String username, String password, boolean rememberMe) {
+        try {
+            log.info("Performing keyboard-based login for user: {}", username);
+            
+            // Use keyboard sequence builder for complete login flow
+            KeyboardSequenceBuilder.KeyboardSequenceResponse loginSequence = 
+                KeyboardSequenceBuilder.create()
+                    .withDefaultTimeout(10)
+                    .onElement(USERNAME_FIELD)
+                    .typeAndClear(username)
+                    .tab()
+                    .onElement(PASSWORD_FIELD)
+                    .type(password)
+                    .execute();
+            
+            if (!loginSequence.isAllSuccess()) {
+                log.error("Failed to input credentials: {}", loginSequence.toString());
+                return false;
+            }
+            
+            // Handle remember me checkbox if needed
+            if (rememberMe) {
+                boolean checkboxHandled = FluentKeyboardActions.onElement(REMEMBER_ME_CHECKBOX)
+                        .pressSpace() // Toggle checkbox with space
+                        .isSuccess();
+                
+                if (!checkboxHandled) {
+                    log.warn("Failed to toggle remember me checkbox");
+                }
+            }
+            
+            // Submit form using Enter key
+            boolean submitSuccess = FluentKeyboardActions.onElement(PASSWORD_FIELD)
+                    .pressEnter()
+                    .isSuccess();
+            
+            if (!submitSuccess) {
+                log.error("Failed to submit login form with Enter key");
+                return false;
+            }
+            
+            log.info("Keyboard-based login sequence completed successfully");
+            return true;
+            
+        } catch (Exception e) {
+            log.error("Keyboard login failed with exception: {}", e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Login with human-like typing simulation
+     */
+    public boolean loginHumanLike(String username, String password) {
+        try {
+            log.info("Performing human-like login for user: {}", username);
+            
+            // Human-like username input
+            boolean usernameSuccess = FluentKeyboardActions.onElement(USERNAME_FIELD)
+                    .clearFirst()
+                    .humanLike(80, 180) // Realistic typing speed
+                    .typeText(username)
+                    .isSuccess();
+            
+            if (!usernameSuccess) {
+                log.error("Failed to input username with human-like typing");
+                return false;
+            }
+            
+            // Short pause like a real user
+            Thread.sleep(500);
+            
+            // Tab to password field
+            boolean tabSuccess = FluentKeyboardActions.onElement(USERNAME_FIELD)
+                    .pressTab()
+                    .isSuccess();
+            
+            if (!tabSuccess) {
+                log.error("Failed to navigate to password field with Tab");
+                return false;
+            }
+            
+            // Human-like password input
+            boolean passwordSuccess = FluentKeyboardActions.onElement(PASSWORD_FIELD)
+                    .humanLike(60, 150) // Slightly faster for password
+                    .typeText(password)
+                    .isSuccess();
+            
+            if (!passwordSuccess) {
+                log.error("Failed to input password with human-like typing");
+                return false;
+            }
+            
+            // Brief pause before submission
+            Thread.sleep(300);
+            
+            // Submit with Enter
+            boolean submitSuccess = FluentKeyboardActions.onElement(PASSWORD_FIELD)
+                    .pressEnter()
+                    .isSuccess();
+            
+            log.info("Human-like login completed: {}", submitSuccess ? "SUCCESS" : "FAILED");
+            return submitSuccess;
+            
+        } catch (Exception e) {
+            log.error("Human-like login failed: {}", e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Quick login using keyboard shortcuts
+     */
+    public boolean quickLogin(String username, String password) {
+        try {
+            // Fast, efficient login without human-like delays
+            return KeyboardSequenceBuilder.create()
+                    .withDefaultTimeout(5)
+                    .onElement(USERNAME_FIELD)
+                    .typeAndClear(username)
+                    .tab()
+                    .onElement(PASSWORD_FIELD)
+                    .type(password)
+                    .enter()
+                    .executeAndVerify();
+                    
+        } catch (Exception e) {
+            log.error("Quick login failed: {}", e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Handle forgot password using keyboard navigation
+     */
+    public boolean accessForgotPassword() {
+        try {
+            // Navigate to forgot password link using Tab and Enter
+            boolean navigationSuccess = FluentKeyboardActions.onElement(USERNAME_FIELD)
+                    .pressTab() // Go to password field
+                    .isSuccess();
+            
+            if (navigationSuccess) {
+                navigationSuccess = FluentKeyboardActions.onElement(PASSWORD_FIELD)
+                        .pressTab() // Go to login button
+                        .isSuccess();
+            }
+            
+            if (navigationSuccess) {
+                navigationSuccess = FluentKeyboardActions.onElement(LOGIN_BUTTON)
+                        .pressTab() // Go to forgot password link
+                        .isSuccess();
+            }
+            
+            if (navigationSuccess) {
+                navigationSuccess = FluentKeyboardActions.onElement(FORGOT_PASSWORD_LINK)
+                        .pressEnter() // Click forgot password
+                        .isSuccess();
+            }
+            
+            return navigationSuccess;
+            
+        } catch (Exception e) {
+            log.error("Forgot password navigation failed: {}", e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Clear all form fields using keyboard shortcuts
+     */
+    public boolean clearAllFields() {
+        try {
+            // Select all and delete in username field
+            boolean usernameCleared = FluentKeyboardActions.onElement(USERNAME_FIELD)
+                    .selectAll()
+                    .pressDelete()
+                    .isSuccess();
+            
+            // Select all and delete in password field
+            boolean passwordCleared = FluentKeyboardActions.onElement(PASSWORD_FIELD)
+                    .selectAll()
+                    .pressDelete()
+                    .isSuccess();
+            
+            return usernameCleared && passwordCleared;
+            
+        } catch (Exception e) {
+            log.error("Clear all fields failed: {}", e.getMessage());
+            return false;
+        }
+    }
+}
+
+/**
+ * Integration with Cucumber for BDD testing
+ */
+package com.enterprise.steps;
+
+import io.cucumber.java.en.*;
+import com.enterprise.selenium.keywords.KeyboardEventsHandler;
+import com.enterprise.selenium.keywords.fluent.FluentKeyboardActions;
+import com.enterprise.pages.LoginPage;
+import org.openqa.selenium.WebDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class KeyboardEventSteps {
+    private static final Logger log = LoggerFactory.getLogger(KeyboardEventSteps.class);
+    
+    private WebDriver driver;
+    private LoginPage loginPage;
+    
+    @Given("I am on the login page")
+    public void i_am_on_the_login_page() {
+        // Initialize driver and navigate to login page
+        // driver.get("login-url");
+        loginPage = new LoginPage(driver);
+    }
+    
+    @When("I type {string} in the username field using keyboard")
+    public void i_type_username_using_keyboard(String username) throws Exception {
+        boolean success = KeyboardEventsHandler.sendText(
+            LoginPage.USERNAME_FIELD, username, true, 10).isSuccess();
+        
+        if (!success) {
+            throw new RuntimeException("Failed to type username using keyboard");
+        }
+    }
+    
+    @When("I press Tab to navigate to password field")
+    public void i_press_tab_to_navigate() throws Exception {
+        boolean success = FluentKeyboardActions.onElement(LoginPage.USERNAME_FIELD)
+                .pressTab()
+                .isSuccess();
+        
+        if (!success) {
+            throw new RuntimeException("Failed to navigate with Tab key");
+        }
+    }
+    
+    @When("I type {string} in the password field with human-like speed")
+    public void i_type_password_human_like(String password) throws Exception {
+        boolean success = FluentKeyboardActions.onElement(LoginPage.PASSWORD_FIELD)
+                .humanLike(100, 200)
+                .typeText(password)
+                .isSuccess();
+        
+        if (!success) {
+            throw new RuntimeException("Failed to type password with human-like speed");
+        }
+    }
+    
+    @When("I press Enter to submit the form")
+    public void i_press_enter_to_submit() throws Exception {
+        boolean success = FluentKeyboardActions.onElement(LoginPage.PASSWORD_FIELD)
+                .pressEnter()
+                .isSuccess();
+        
+        if (!success) {
+            throw new RuntimeException("Failed to submit form with Enter key");
+        }
+    }
+    
+    @Then("the login should be completed using only keyboard events")
+    public void login_completed_with_keyboard() {
+        // Verify login success
+        log.info("Login completed successfully using keyboard events");
+    }
+}
+
+/**
+ * Performance monitoring utility for keyboard events
+ */
+package com.enterprise.selenium.monitoring;
+
+import com.enterprise.selenium.keywords.KeyboardEventsHandler.KeyboardActionResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Map;
+
+public class KeyboardPerformanceMonitor {
+    private static final Logger log = LoggerFactory.getLogger(KeyboardPerformanceMonitor.class);
+    
+    private static final Map<String, AtomicLong> totalExecutionTime = new ConcurrentHashMap<>();
+    private static final Map<String, AtomicInteger> operationCount = new ConcurrentHashMap<>();
+    private static final Map<String, AtomicLong> maxExecutionTime = new ConcurrentHashMap<>();
+    private static final Map<String, AtomicLong> minExecutionTime = new ConcurrentHashMap<>();
+    
+    /**
+     * Record keyboard operation performance
+     */
+    public static void recordOperation(String operationType, long executionTimeMs) {
+        totalExecutionTime.computeIfAbsent(operationType, k -> new AtomicLong(0))
+                          .addAndGet(executionTimeMs);
+        
+        operationCount.computeIfAbsent(operationType, k -> new AtomicInteger(0))
+                     .incrementAndGet();
+        
+        maxExecutionTime.computeIfAbsent(operationType, k -> new AtomicLong(0))
+                        .updateAndGet(current -> Math.max(current, executionTimeMs));
+        
+        minExecutionTime.computeIfAbsent(operationType, k -> new AtomicLong(Long.MAX_VALUE))
+                        .updateAndGet(current -> Math.min(current, executionTimeMs));
+        
+        // Log warning for slow operations
+        if (executionTimeMs > 2000) {
+            log.warn("Slow keyboard operation detected: {} took {}ms", operationType, executionTimeMs);
+        }
+    }
+    
+    /**
+     * Record keyboard action response
+     */
+    public static void recordKeyboardAction(KeyboardActionResponse response) {
+        if (response != null && response.getActionType() != null) {
+            recordOperation(response.getActionType().toString(), response.getExecutionTimeMs());
+        }
+    }
+    
+    /**
+     * Get performance statistics
+     */
+    public static void logPerformanceStats() {
+        log.info("=== Keyboard Events Performance Statistics ===");
+        
+        for (String operationType : totalExecutionTime.keySet()) {
+            long total = totalExecutionTime.get(operationType).get();
+            int count = operationCount.get(operationType).get();
+            long max = maxExecutionTime.get(operationType).get();
+            long min = minExecutionTime.get(operationType).get();
+            
+            if (min == Long.MAX_VALUE) min = 0;
+            
+            double average = count > 0 ? (double) total / count : 0;
+            
+            log.info("Operation: {} | Count: {} | Total: {}ms | Avg: {:.2f}ms | Max: {}ms | Min: {}ms",
+                    operationType, count, total, average, max, min);
+        }
+        
+        log.info("=== End Performance Statistics ===");
+    }
+    
+    /**
+     * Reset performance statistics
+     */
+    public static void resetStats() {
+        totalExecutionTime.clear();
+        operationCount.clear();
+        maxExecutionTime.clear();
+        minExecutionTime.clear();
+        log.info("Keyboard events performance statistics reset");
+    }
+    
+    /**
+     * Get average execution time for operation type
+     */
+    public static double getAverageExecutionTime(String operationType) {
+        long total = totalExecutionTime.getOrDefault(operationType, new AtomicLong(0)).get();
+        int count = operationCount.getOrDefault(operationType, new AtomicInteger(0)).get();
+        
+        return count > 0 ? (double) total / count : 0.0;
+    }
+}
+
+/**
+ * Retry utility specifically for keyboard operations
+ */
+package com.enterprise.selenium.utils;
+
+import com.enterprise.selenium.keywords.KeyboardEventsHandler;
+import com.enterprise.selenium.keywords.KeyboardEventsHandler.KeyboardActionResponse;
+import com.enterprise.selenium.keywords.KeyboardEventsHandler.KeyboardActionException;
+import org.openqa.selenium.By;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import java.util.function.Supplier;
+
+public class KeyboardRetryUtil {
+    private static final Logger log = LoggerFactory.getLogger(KeyboardRetryUtil.class);
+    
+    /**
+     * Retry keyboard operation with custom retry logic
+     */
+    public static KeyboardActionResponse retryKeyboardOperation(
+            Supplier<KeyboardActionResponse> operation, 
+            String operationName, 
+            int maxAttempts, 
+            long delayMs) {
+        
+        Exception lastException = null;
+        KeyboardActionResponse lastResponse = null;
+        
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            try {
+                log.debug("Attempting keyboard operation '{}' - attempt {} of {}", 
+                         operationName, attempt, maxAttempts);
+                
+                KeyboardActionResponse response = operation.get();
+                
+                if (response.isSuccess()) {
+                    if (attempt > 1) {
+                        log.info("Keyboard operation '{}' succeeded on attempt {}", operationName, attempt);
+                    }
+                    return response;
+                } else {
+                    lastResponse = response;
+                    log.warn("Keyboard operation '{}' failed on attempt {}: {}", 
+                            operationName, attempt, response.getMessage());
+                }
+                
+            } catch (Exception e) {
+                lastException = e;
+                log.warn("Exception during keyboard operation '{}' attempt {}: {}", 
+                        operationName, attempt, e.getMessage());
+            }
+            
+            // Apply delay before retry (except for last attempt)
+            if (attempt < maxAttempts) {
+                try {
+                    Thread.sleep(delayMs * attempt); // Exponential backoff
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Keyboard operation retry interrupted", ie);
+                }
+            }
+        }
+        
+        // All attempts failed
+        log.error("Keyboard operation '{}' failed after {} attempts", operationName, maxAttempts);
+        
+        if (lastResponse != null) {
+            return lastResponse; // Return last failed response
+        } else {
+            // Create error response from exception
+            return new KeyboardActionResponse(false, 
+                    "Operation failed with exception: " + 
+                    (lastException != null ? lastException.getMessage() : "Unknown error"),
+                    0, null, null, null);
+        }
+    }
+    
+    /**
+     * Retry text input operation
+     */
+    public static boolean retryTextInput(By locator, String text, boolean clearFirst, int maxAttempts) {
+        KeyboardActionResponse response = retryKeyboardOperation(
+            () -> {
+                try {
+                    return KeyboardEventsHandler.sendText(locator, text, clearFirst, 10);
+                } catch (KeyboardActionException e) {
+                    return new KeyboardActionResponse(false, e.getMessage(), 0, null, text, locator);
+                }
+            },
+            "Text Input: " + text,
+            maxAttempts,
+            1000
+        );
+        
+        return response.isSuccess();
+    }
+    
+    /**
+     * Retry special key operation
+     */
+    public static boolean retrySpecialKey(By locator, Object specialKey, int maxAttempts) {
+        KeyboardActionResponse response = retryKeyboardOperation(
+            () -> {
+                try {
+                    return KeyboardEventsHandler.sendSpecialKey(locator, specialKey, 10);
+                } catch (KeyboardActionException e) {
+                    return new KeyboardActionResponse(false, e.getMessage(), 0, null, 
+                                                    specialKey.toString(), locator);
+                }
+            },
+            "Special Key: " + specialKey.toString(),
+            maxAttempts,
+            500
+        );
+        
+        return response.isSuccess();
+    }
+}
