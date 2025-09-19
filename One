@@ -1,0 +1,151 @@
+package com.resuable;
+
+import org.openqa.selenium.edge.EdgeDriver;
+import org.openqa.selenium.remote.DesiredCapabilities;
+import org.openqa.selenium.remote.HttpCommandExecutor;
+import java.net.URL;
+import java.util.Iterator;
+import java.util.Properties;
+import java.util.Set;
+
+public class ReuseEdgeSession {
+    private static final String EDGE_DRIVER_PATH = ".\\msedgedriver.exe";
+
+    public static void main(String[] args) throws Exception {
+
+        Properties sessionData = SessionManager.loadSession();
+
+        if (sessionData == null) {
+            // ===== FIRST RUN: Launch a brand new browser =====
+            System.setProperty("webdriver.edge.driver", EDGE_DRIVER_PATH);
+            EdgeDriver driver = new EdgeDriver();
+
+            driver.get("https://www.google.com");
+
+            // Extract session details
+            HttpCommandExecutor executor = (HttpCommandExecutor) driver.getCommandExecutor();
+            String executorUrl = executor.getAddressOfRemoteServer().toString();
+            String sessionId = driver.getSessionId().toString();
+
+            System.out.println("NEW Browser launched!");
+            System.out.println("Executor URL: " + executorUrl);
+            System.out.println("Session ID: " + sessionId);
+
+            // Save for next time
+            SessionManager.saveSession(executorUrl, sessionId);
+
+        } else {
+            // ===== SECOND RUN: Reuse Existing Browser =====
+            String executorUrl = sessionData.getProperty("executorUrl");
+            String sessionId = sessionData.getProperty("sessionId");
+
+            System.out.println("Trying to reuse existing session...");
+            System.out.println("Executor URL: " + executorUrl);
+            System.out.println("Session ID: " + sessionId);
+
+             DesiredCapabilities capabilities = new DesiredCapabilities();
+            HttpCommandExecutor executor = new HttpCommandExecutor(new URL(executorUrl));
+
+            try {
+                CustomRemoteWebDriver driver = new CustomRemoteWebDriver(executor, capabilities);
+                driver.setSessionIdPublic(sessionId);
+
+                // Control the already open browser
+                
+                Set<String> windowHandles = driver.getWindowHandles();
+                Iterator<String> iterator = windowHandles.iterator();
+                while (iterator.hasNext()) {
+					String string = (String) iterator.next();
+					System.out.println(string);
+					driver.switchTo().window(string);
+				}
+                System.out.println(windowHandles.toString());
+                
+                driver.get("https://www.facebook.in");
+                System.out.println("Page title: " + driver.getTitle());
+
+            } catch (Exception e) {
+                System.out.println("Failed to reuse session, launching a new one...");
+                SessionManager.clearSession(); // Clear old data
+            }
+        }
+    }
+}
+
+====================================================================================================================
+
+package com.resuable;
+
+import java.io.*;
+import java.util.Properties;
+
+import java.io.*;
+import java.util.Properties;
+
+public class SessionManager {
+    private static final String FILE_PATH = "session.properties";
+
+    // Save session details
+    public static void saveSession(String executorUrl, String sessionId) {
+        try (FileOutputStream fos = new FileOutputStream(FILE_PATH)) {
+            Properties props = new Properties();
+            props.setProperty("executorUrl", executorUrl);
+            props.setProperty("sessionId", sessionId);
+            props.store(fos, "Selenium Session Details");
+            System.out.println("Session saved: " + executorUrl + " | " + sessionId);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Load session details
+    public static Properties loadSession() {
+        Properties props = new Properties();
+        try (FileInputStream fis = new FileInputStream(FILE_PATH)) {
+            props.load(fis);
+            return props;
+        } catch (Exception e) {
+            System.out.println("No previous session found.");
+            return null;
+        }
+    }
+
+    // Clear session (use if browser was closed)
+    public static void clearSession() {
+        File file = new File(FILE_PATH);
+        if (file.exists()) {
+            file.delete();
+         System.out.println("SessionManager.clearSession(): deleted");
+        }
+    }
+}
+=======================================================================================================
+package com.resuable;
+
+import org.openqa.selenium.Capabilities;
+import org.openqa.selenium.remote.CommandExecutor;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.remote.SessionId;
+
+import org.openqa.selenium.remote.CommandExecutor;
+import org.openqa.selenium.remote.RemoteWebDriver;
+import org.openqa.selenium.Capabilities;
+
+public class CustomRemoteWebDriver extends RemoteWebDriver {
+
+    public CustomRemoteWebDriver(CommandExecutor executor, Capabilities capabilities) {
+        super(executor, capabilities);
+    }
+
+    // Make protected setSessionId public
+    public void setSessionIdPublic(String sessionId) {
+        super.setSessionId(sessionId);
+    }
+}
+
+
+
+
+
+
+
