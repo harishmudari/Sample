@@ -1,0 +1,15 @@
+Example 3: Convenient One-Liner Access
+
+// Get base URL
+String baseUrl = EnvironmentManager.getInstance().getConfig().getBaseUrl();
+
+// Get timeouts
+int connectTimeout = EnvironmentManager.getInstance().getConfig().getConnectTimeoutMs();
+
+// Get auth credentials
+String clientId = EnvironmentManager.getInstance().getConfig().getAuthClientId();
+
+// Check feature flags
+if (EnvironmentManager.getInstance().getConfig().isSchemaValidationEnabled()) {
+    // Perform schema validation
+}

@@ -1,0 +1,36 @@
+1. Properties Files
+src/test/resources/config/application.properties
+
+# =========================================
+# Base Application Configuration
+# Common properties shared across all environments
+# =========================================
+
+# Application Metadata
+application.name=Enterprise API Automation Framework
+application.version=1.0.0
+
+# Default Environment (overridden by system property)
+environment=DEV
+
+# Timeouts (in milliseconds)
+timeout.connect=5000
+timeout.read=10000
+timeout.write=5000
+
+# Request Configuration
+max.retry.attempts=3
+retry.delay.ms=1000
+
+# Logging
+log.level=INFO
+log.request.enabled=true
+log.response.enabled=true
+
+# Reporting
+extent.report.path=target/extent-reports/
+allure.results.path=target/allure-results/
+
+# Thread Configuration
+parallel.execution.enabled=true
+thread.count=5

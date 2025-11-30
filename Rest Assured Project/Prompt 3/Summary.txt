@@ -1,0 +1,44 @@
+1. BaseClient.java - REST API Client Foundation
+
+Core Method: givenBaseRequest() - returns fresh RequestSpecification copies to prevent state contamination
+Helper Methods: givenAuthenticatedRequest(), givenRequestWithHeader()
+Config Integration: Loads base URI, headers, and timeouts from FrameworkConfig via EnvironmentManager
+SOLID Applied: Single responsibility, open/closed, dependency inversion
+TODO Markers: Indicates where secure credential management (Vault/Secrets Manager) should integrate
+
+2. BaseTest.java - TestNG Test Foundation
+
+Lifecycle Management:
+
+@BeforeSuite: Initializes ExtentReports with timestamped HTML output
+@BeforeMethod: Creates ExtentTest node, logs test start
+@AfterMethod: Captures pass/fail/skip status, logs duration and exceptions
+@AfterSuite: Flushes reports to target/extent-reports/
+
+
+Logging Utilities: logInfo(), logWarning(), logError() that write to both console AND Extent Report
+Extensibility: Clear template for child test classes with usage example
+
+3. log4j2.xml - Enterprise Logging Configuration
+
+5 Appenders: Console, FileAppender (async), Error-specific, TestAppender, plus rolling policies
+Hierarchical Loggers: Different levels for framework code, REST Assured, tests
+Rolling Policies: Time-based (daily) + Size-based (10-20MB) with backup retention
+Production-Ready: Separate error logs, test execution logs, async writes for performance
+
+4. Implementation Guide - Comprehensive Documentation
+
+Detailed explanation of each component
+Usage patterns and examples
+SOLID principles mapping
+Logger configuration table
+Maven dependencies
+Design patterns applied
+
+Key Design Decisions
+✅ Thread-Safe: givenBaseRequest() creates fresh instances (prevents cross-request contamination)
+✅ Immutable Config: FrameworkConfig dependency (no hardcoded values)
+✅ Clean Separation: BaseClient for HTTP, BaseTest for lifecycle/reporting
+✅ Enterprise Logging: Async writes, rolling files, structured by severity
+✅ Zero Deprecated APIs: Java 17 + Rest Assured 5.x compliance
+✅ TODO Comments: External system integration points clearly marked

@@ -1,0 +1,46 @@
+3. Log4j2 Configuration
+
+src/main/resources/log4j2.xml
+
+
+
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Properties>
+        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+        <Property name="LOG_PATH">target/logs</Property>
+    </Properties>
+
+    <Appenders>
+        <!-- Console Appender -->
+        <Console name="Console" target="SYSTEM_OUT">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+        </Console>
+
+        <!-- File Appender -->
+        <RollingFile name="FileAppender" 
+                     fileName="${LOG_PATH}/framework.log"
+                     filePattern="${LOG_PATH}/framework-%d{yyyy-MM-dd}-%i.log">
+            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1"/>
+                <SizeBasedTriggeringPolicy size="10MB"/>
+            </Policies>
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <!-- Framework Logger -->
+        <Logger name="com.harish.api.framework" level="debug" additivity="false">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+        </Logger>
+
+        <!-- Root Logger -->
+        <Root level="info">
+            <AppenderRef ref="Console"/>
+            <AppenderRef ref="FileAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>

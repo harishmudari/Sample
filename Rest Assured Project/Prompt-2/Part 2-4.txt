@@ -1,0 +1,429 @@
+2. Java Classes
+
+FrameworkConfig.java
+
+
+package com.harish.api.framework.config;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
+/**
+ * FrameworkConfig is responsible for loading and providing configuration properties
+ * from environment-specific property files.
+ * 
+ * <p>This class reads properties from:
+ * <ul>
+ *   <li>application.properties (base configuration)</li>
+ *   <li>application-{env}.properties (environment-specific overrides)</li>
+ * </ul>
+ * 
+ * <p>The environment is determined by the system property "env" (default: DEV).
+ * 
+ * <p>Usage: This class is used internally by EnvironmentManager and should not be
+ * instantiated directly by test classes.
+ * 
+ * @author Harish
+ * @version 1.0
+ */
+public class FrameworkConfig {
+
+    private static final Logger logger = LogManager.getLogger(FrameworkConfig.class);
+    
+    private final Properties properties;
+    private final String environment;
+
+    // Property file paths
+    private static final String BASE_CONFIG_FILE = "config/application.properties";
+    private static final String ENV_CONFIG_FILE_TEMPLATE = "config/application-%s.properties";
+
+    /**
+     * Constructor that loads configuration based on the environment.
+     * 
+     * <p>Environment is determined by system property "env" (DEV/QA/STAGING/PROD).
+     * Falls back to "DEV" if not specified.
+     */
+    public FrameworkConfig() {
+        this.environment = System.getProperty("env", "DEV").toUpperCase();
+        this.properties = new Properties();
+        loadConfiguration();
+    }
+
+    /**
+     * Loads configuration from base and environment-specific property files.
+     * 
+     * <p>Loading order:
+     * <ol>
+     *   <li>Base properties from application.properties</li>
+     *   <li>Environment-specific properties from application-{env}.properties (overrides base)</li>
+     * </ol>
+     */
+    private void loadConfiguration() {
+        try {
+            // Load base configuration
+            loadPropertiesFile(BASE_CONFIG_FILE);
+            logger.info("Base configuration loaded from: {}", BASE_CONFIG_FILE);
+
+            // Load environment-specific configuration
+            String envConfigFile = String.format(ENV_CONFIG_FILE_TEMPLATE, environment.toLowerCase());
+            loadPropertiesFile(envConfigFile);
+            logger.info("Environment-specific configuration loaded from: {}", envConfigFile);
+            logger.info("Framework initialized for environment: {}", environment);
+
+        } catch (IOException e) {
+            logger.error("Failed to load configuration files", e);
+            throw new RuntimeException("Configuration loading failed. Ensure property files exist in resources/config/", e);
+        }
+    }
+
+    /**
+     * Loads properties from a specific file in the classpath.
+     * 
+     * @param fileName the path to the property file relative to resources
+     * @throws IOException if file cannot be read
+     */
+    private void loadPropertiesFile(String fileName) throws IOException {
+        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(fileName)) {
+            if (inputStream == null) {
+                throw new IOException("Property file '" + fileName + "' not found in the classpath");
+            }
+            properties.load(inputStream);
+        }
+    }
+
+    /**
+     * Gets a property value by key.
+     * 
+     * @param key the property key
+     * @return the property value, or null if not found
+     */
+    public String getProperty(String key) {
+        return properties.getProperty(key);
+    }
+
+    /**
+     * Gets a property value by key with a default value.
+     * 
+     * @param key the property key
+     * @param defaultValue the default value if key is not found
+     * @return the property value, or defaultValue if not found
+     */
+    public String getProperty(String key, String defaultValue) {
+        return properties.getProperty(key, defaultValue);
+    }
+
+    // ============================================
+    // Environment and Application Info
+    // ============================================
+
+    /**
+     * @return current environment name (DEV/QA/STAGING/PROD)
+     */
+    public String getEnvironment() {
+        return environment;
+    }
+
+    /**
+     * @return application name from configuration
+     */
+    public String getApplicationName() {
+        return getProperty("application.name", "Enterprise API Framework");
+    }
+
+    /**
+     * @return application version from configuration
+     */
+    public String getApplicationVersion() {
+        return getProperty("application.version", "1.0.0");
+    }
+
+    // ============================================
+    // Base URLs
+    // ============================================
+
+    /**
+     * @return base URL for all microservices
+     */
+    public String getBaseUrl() {
+        return getProperty("base.url");
+    }
+
+    /**
+     * @return base URL for authentication service
+     */
+    public String getAuthBaseUrl() {
+        return getProperty("auth.base.url");
+    }
+
+    /**
+     * @return accounts service URL
+     */
+    public String getAccountsServiceUrl() {
+        return getProperty("accounts.service.url");
+    }
+
+    /**
+     * @return transactions service URL
+     */
+    public String getTransactionsServiceUrl() {
+        return getProperty("transactions.service.url");
+    }
+
+    /**
+     * @return customers service URL
+     */
+    public String getCustomersServiceUrl() {
+        return getProperty("customers.service.url");
+    }
+
+    /**
+     * @return payments service URL
+     */
+    public String getPaymentsServiceUrl() {
+        return getProperty("payments.service.url");
+    }
+
+    /**
+     * @return cards service URL
+     */
+    public String getCardsServiceUrl() {
+        return getProperty("cards.service.url");
+    }
+
+    // ============================================
+    // Authentication Configuration
+    // ============================================
+
+    /**
+     * @return OAuth token endpoint URL
+     */
+    public String getAuthTokenUrl() {
+        return getProperty("auth.token.url");
+    }
+
+    /**
+     * @return OAuth token refresh URL
+     */
+    public String getAuthRefreshUrl() {
+        return getProperty("auth.refresh.url");
+    }
+
+    /**
+     * @return OAuth token revoke URL
+     */
+    public String getAuthRevokeUrl() {
+        return getProperty("auth.revoke.url");
+    }
+
+    /**
+     * @return OAuth client ID
+     * TODO: In production, retrieve from secure vault (e.g., HashiCorp Vault, AWS Secrets Manager)
+     */
+    public String getAuthClientId() {
+        return getProperty("auth.client.id");
+    }
+
+    /**
+     * @return OAuth client secret
+     * TODO: In production, retrieve from secure vault (e.g., HashiCorp Vault, AWS Secrets Manager)
+     */
+    public String getAuthClientSecret() {
+        return getProperty("auth.client.secret");
+    }
+
+    /**
+     * @return OAuth grant type (e.g., client_credentials)
+     */
+    public String getAuthGrantType() {
+        return getProperty("auth.grant.type", "client_credentials");
+    }
+
+    // ============================================
+    // Timeout Configuration
+    // ============================================
+
+    /**
+     * @return connection timeout in milliseconds
+     */
+    public int getConnectTimeoutMs() {
+        return Integer.parseInt(getProperty("timeout.connect", "5000"));
+    }
+
+    /**
+     * @return read timeout in milliseconds
+     */
+    public int getReadTimeoutMs() {
+        return Integer.parseInt(getProperty("timeout.read", "10000"));
+    }
+
+    /**
+     * @return write timeout in milliseconds
+     */
+    public int getWriteTimeoutMs() {
+        return Integer.parseInt(getProperty("timeout.write", "5000"));
+    }
+
+    // ============================================
+    // Retry Configuration
+    // ============================================
+
+    /**
+     * @return maximum number of retry attempts for failed requests
+     */
+    public int getMaxRetryAttempts() {
+        return Integer.parseInt(getProperty("max.retry.attempts", "3"));
+    }
+
+    /**
+     * @return delay between retry attempts in milliseconds
+     */
+    public int getRetryDelayMs() {
+        return Integer.parseInt(getProperty("retry.delay.ms", "1000"));
+    }
+
+    // ============================================
+    // Database Configuration
+    // ============================================
+
+    /**
+     * @return database JDBC URL
+     */
+    public String getDbUrl() {
+        return getProperty("db.url");
+    }
+
+    /**
+     * @return database username
+     * TODO: In production, retrieve from secure vault
+     */
+    public String getDbUsername() {
+        return getProperty("db.username");
+    }
+
+    /**
+     * @return database password
+     * TODO: In production, retrieve from secure vault
+     */
+    public String getDbPassword() {
+        return getProperty("db.password");
+    }
+
+    // ============================================
+    // Logging Configuration
+    // ============================================
+
+    /**
+     * @return log level (INFO/DEBUG/WARN/ERROR)
+     */
+    public String getLogLevel() {
+        return getProperty("log.level", "INFO");
+    }
+
+    /**
+     * @return true if request logging is enabled
+     */
+    public boolean isRequestLoggingEnabled() {
+        return Boolean.parseBoolean(getProperty("log.request.enabled", "true"));
+    }
+
+    /**
+     * @return true if response logging is enabled
+     */
+    public boolean isResponseLoggingEnabled() {
+        return Boolean.parseBoolean(getProperty("log.response.enabled", "true"));
+    }
+
+    // ============================================
+    // Reporting Configuration
+    // ============================================
+
+    /**
+     * @return path for Extent Reports output
+     */
+    public String getExtentReportPath() {
+        return getProperty("extent.report.path", "target/extent-reports/");
+    }
+
+    /**
+     * @return path for Allure results
+     */
+    public String getAllureResultsPath() {
+        return getProperty("allure.results.path", "target/allure-results/");
+    }
+
+    // ============================================
+    // Thread Configuration
+    // ============================================
+
+    /**
+     * @return true if parallel execution is enabled
+     */
+    public boolean isParallelExecutionEnabled() {
+        return Boolean.parseBoolean(getProperty("parallel.execution.enabled", "true"));
+    }
+
+    /**
+     * @return number of threads for parallel execution
+     */
+    public int getThreadCount() {
+        return Integer.parseInt(getProperty("thread.count", "5"));
+    }
+
+    // ============================================
+    // Feature Flags
+    // ============================================
+
+    /**
+     * @return true if JSON schema validation is enabled
+     */
+    public boolean isSchemaValidationEnabled() {
+        return Boolean.parseBoolean(getProperty("feature.schema.validation.enabled", "true"));
+    }
+
+    /**
+     * @return true if response time validation is enabled
+     */
+    public boolean isResponseTimeValidationEnabled() {
+        return Boolean.parseBoolean(getProperty("feature.response.time.validation.enabled", "true"));
+    }
+
+    /**
+     * @return true if database validation is enabled
+     */
+    public boolean isDatabaseValidationEnabled() {
+        return Boolean.parseBoolean(getProperty("feature.database.validation.enabled", "false"));
+    }
+
+    // ============================================
+    // Rate Limiting
+    // ============================================
+
+    /**
+     * @return maximum requests per second (for rate limiting)
+     */
+    public int getRateLimitRequestsPerSecond() {
+        return Integer.parseInt(getProperty("rate.limit.requests.per.second", "10"));
+    }
+
+    // ============================================
+    // External Services
+    // ============================================
+
+    /**
+     * @return email service URL
+     */
+    public String getEmailServiceUrl() {
+        return getProperty("email.service.url");
+    }
+
+    /**
+     * @return notification service URL
+     */
+    public String getNotificationServiceUrl() {
+        return getProperty("notification.service.url");
+    }
+}

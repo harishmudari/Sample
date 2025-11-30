@@ -1,0 +1,24 @@
+5. Running Tests with Different Environments
+
+
+Command Line
+
+
+
+# Run with DEV environment (default)
+mvn clean test
+
+# Run with QA environment
+mvn clean test -Denv=QA
+
+# Run with STAGING environment
+mvn clean test -Denv=STAGING
+
+# Run with custom properties
+mvn clean test -Denv=QA -DthreadCount=10
+```
+
+### IntelliJ IDEA / Eclipse
+Add VM options in Run Configuration:
+```
+-Denv=QA

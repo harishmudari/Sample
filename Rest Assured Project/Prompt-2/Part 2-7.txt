@@ -1,0 +1,42 @@
+4. Usage Examples
+
+Example 1: Using in Test ClassExample 1: Using in Test Class
+
+
+package com.harish.api.framework.tests;
+
+import com.harish.api.framework.config.EnvironmentManager;
+import com.harish.api.framework.config.FrameworkConfig;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+public class AccountServiceTest {
+
+    private FrameworkConfig config;
+
+    @BeforeClass
+    public void setup() {
+        // Get configuration instance
+        config = EnvironmentManager.getInstance().getConfig();
+        
+        // Print config summary for debugging
+        EnvironmentManager.getInstance().printConfigSummary();
+    }
+
+    @Test
+    public void testGetAccountDetails() {
+        // Use configuration values
+        String accountsUrl = config.getAccountsServiceUrl();
+        String authToken = getAuthToken(); // Assume this method exists
+        
+        // Make API call using the URL from config
+        // RestAssured.given().baseUri(accountsUrl)...
+    }
+
+    private String getAuthToken() {
+        String tokenUrl = config.getAuthTokenUrl();
+        String clientId = config.getAuthClientId();
+        // Get token logic here
+        return "token";
+    }
+}

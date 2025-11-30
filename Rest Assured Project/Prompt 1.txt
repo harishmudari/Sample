@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Project Coordinates -->
+    <groupId>com.harish.api</groupId>
+    <artifactId>enterprise-api-automation-framework</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>Enterprise API Automation Framework</name>
+    <description>Production-ready REST Assured framework for banking microservices automation</description>
+
+    <!-- Properties -->
+    <properties>
+        <!-- Java Version -->
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Dependency Versions -->
+        <rest-assured.version>5.5.0</rest-assured.version>
+        <testng.version>7.10.2</testng.version>
+        <jackson.version>2.17.2</jackson.version>
+        <gson.version>2.11.0</gson.version>
+        <log4j.version>2.23.1</log4j.version>
+        <extentreports.version>5.1.2</extentreports.version>
+        <allure.version>2.27.0</allure.version>
+        <apache.poi.version>5.3.0</apache.poi.version>
+        <commons-io.version>2.16.1</commons-io.version>
+        <commons-lang3.version>3.14.0</commons-lang3.version>
+        <json-schema-validator.version>5.5.0</json-schema-validator.version>
+        <lombok.version>1.18.32</lombok.version>
+        <owner.version>1.0.12</owner.version>
+
+        <!-- Plugin Versions -->
+        <maven-surefire-plugin.version>3.2.5</maven-surefire-plugin.version>
+        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
+        <allure-maven.version>2.12.0</allure-maven.version>
+    </properties>
+
+    <dependencies>
+        <!-- REST Assured - Core API automation library -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <version>${rest-assured.version}</version>
+        </dependency>
+
+        <!-- REST Assured - JSON Path support -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-path</artifactId>
+            <version>${rest-assured.version}</version>
+        </dependency>
+
+        <!-- REST Assured - JSON Schema Validator -->
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>json-schema-validator</artifactId>
+            <version>${json-schema-validator.version}</version>
+        </dependency>
+
+        <!-- TestNG - Testing framework -->
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+        </dependency>
+
+        <!-- Jackson - JSON serialization/deserialization -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- Gson - Alternative JSON library -->
+        <dependency>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>${gson.version}</version>
+        </dependency>
+
+        <!-- Log4j2 - Logging framework -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <!-- Extent Reports - Reporting library -->
+        <dependency>
+            <groupId>com.aventstack</groupId>
+            <artifactId>extentreports</artifactId>
+            <version>${extentreports.version}</version>
+        </dependency>
+
+        <!-- Allure - TestNG integration for reporting -->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <version>${allure.version}</version>
+        </dependency>
+
+        <!-- Apache POI - Excel file operations for data-driven testing -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>${apache.poi.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>${apache.poi.version}</version>
+        </dependency>
+
+        <!-- Commons IO - File utilities -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons-io.version}</version>
+        </dependency>
+
+        <!-- Commons Lang3 - String and utility operations -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+            <version>${commons-lang3.version}</version>
+        </dependency>
+
+        <!-- Lombok - Reduce boilerplate code -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Owner - Type-safe configuration management -->
+        <dependency>
+            <groupId>org.aeonbits.owner</groupId>
+            <artifactId>owner</artifactId>
+            <version>${owner.version}</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <!-- Maven Compiler Plugin - Java 17 compilation -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven-compiler-plugin.version}</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <!-- Maven Surefire Plugin - TestNG test execution -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${maven-surefire-plugin.version}</version>
+                <configuration>
+                    <!-- TestNG suite XML file -->
+                    <suiteXmlFiles>
+                        <suiteXmlFile>src/test/resources/testng.xml</suiteXmlFile>
+                    </suiteXmlFiles>
+                    <!-- Parallel execution settings -->
+                    <parallel>methods</parallel>
+                    <threadCount>5</threadCount>
+                    <!-- Test failure behavior -->
+                    <testFailureIgnore>false</testFailureIgnore>
+                    <!-- System properties for framework -->
+                    <systemPropertyVariables>
+                        <environment>${env}</environment>
+                    </systemPropertyVariables>
+                    <!-- Listener for Allure reporting -->
+                    <properties>
+                        <property>
+                            <name>usedefaultlisteners</name>
+                            <value>false</value>
+                        </property>
+                    </properties>
+                </configuration>
+            </plugin>
+
+            <!-- Allure Maven Plugin - Report generation -->
+            <plugin>
+                <groupId>io.qameta.allure</groupId>
+                <artifactId>allure-maven</artifactId>
+                <version>${allure-maven.version}</version>
+                <configuration>
+                    <reportVersion>${allure.version}</reportVersion>
+                    <resultsDirectory>${project.build.directory}/allure-results</resultsDirectory>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+    <!-- Optional: Profile for different environments -->
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <env>dev</env>
+            </properties>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+        </profile>
+        <profile>
+            <id>qa</id>
+            <properties>
+                <env>qa</env>
+            </properties>
+        </profile>
+        <profile>
+            <id>staging</id>
+            <properties>
+                <env>staging</env>
+            </properties>
+        </profile>
+        <profile>
+            <id>prod</id>
+            <properties>
+                <env>prod</env>
+            </properties>
+        </profile>
+    </profiles>
+
+</project>
+```
+
+---
+
+## Project Folder Structure
+```
+enterprise-api-automation-framework/
+│
+├── pom.xml                                    # Maven build configuration
+│
+├── src/
+│   ├── main/
+│   │   ├── java/
+│   │   │   └── com/harish/api/framework/
+│   │   │       ├── clients/                   # API client classes (Factory pattern)
+│   │   │       ├── config/                    # Configuration management (Owner library)
+│   │   │       ├── constants/                 # Framework constants and enums
+│   │   │       ├── filters/                   # Rest Assured request/response filters
+│   │   │       ├── listeners/                 # TestNG listeners for reporting
+│   │   │       ├── models/                    # POJO/DTO classes for request/response
+│   │   │       │   ├── request/
+│   │   │       │   └── response/
+│   │   │       ├── reporting/                 # Extent Reports and Allure integration
+│   │   │       ├── specifications/            # Request/Response specifications (Builder)
+│   │   │       ├── utilities/                 # Utility classes (JSON, Excel, etc.)
+│   │   │       └── validators/                # Custom validation logic
+│   │   │
+│   │   └── resources/
+│   │       ├── log4j2.xml                     # Log4j2 configuration
+│   │       └── schemas/                       # JSON schema files for validation
+│   │
+│   └── test/
+│       ├── java/
+│       │   └── com/harish/api/framework/
+│       │       ├── base/                      # Base test class setup
+│       │       └── tests/                     # Actual test classes
+│       │           ├── accounts/              # Account service tests
+│       │           ├── transactions/          # Transaction service tests
+│       │           ├── customers/             # Customer service tests
+│       │           └── payments/              # Payment service tests
+│       │
+│       └── resources/
+│           ├── testng.xml                     # TestNG suite configuration
+│           ├── config/                        # Environment-specific configs
+│           │   ├── dev.properties
+│           │   ├── qa.properties
+│           │   └── staging.properties
+│           ├── testdata/                      # Test data files
+│           │   ├── accounts.xlsx
+│           │   ├── transactions.json
+│           │   └── customers.csv
+│           └── extent-config.xml              # Extent Reports configuration
+│
+├── target/                                    # Maven build output
+│   ├── allure-results/                        # Allure test results
+│   ├── extent-reports/                        # Extent HTML reports
+│   └── logs/                                  # Application logs
+│
+├── .gitignore                                 # Git ignore file
+└── README.md                                  # Project documentation

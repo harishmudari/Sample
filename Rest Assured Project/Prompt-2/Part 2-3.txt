@@ -1,0 +1,52 @@
+src/test/resources/config/application-staging.properties
+
+
+
+# =========================================
+# Staging Environment Configuration
+# =========================================
+
+environment=STAGING
+
+# Base URLs for Banking Microservices
+base.url=https://api-staging.mybank.com
+auth.base.url=https://auth-staging.mybank.com
+
+# Service Endpoints
+accounts.service.url=${base.url}/accounts/v1
+transactions.service.url=${base.url}/transactions/v1
+customers.service.url=${base.url}/customers/v1
+payments.service.url=${base.url}/payments/v1
+cards.service.url=${base.url}/cards/v1
+
+# Authentication Endpoints
+auth.token.url=${auth.base.url}/oauth/token
+auth.refresh.url=${auth.base.url}/oauth/refresh
+auth.revoke.url=${auth.base.url}/oauth/revoke
+
+# TODO: Replace with actual staging credentials (use vault/secret manager in production)
+auth.client.id=staging_client_11111
+auth.client.secret=staging_secret_zzzzz
+auth.grant.type=client_credentials
+
+# Database Configuration
+db.url=jdbc:postgresql://staging-db.mybank.com:5432/banking_db
+db.username=staging_user
+db.password=staging_pass
+
+# Timeouts - Staging environment (production-like)
+timeout.connect=5000
+timeout.read=12000
+timeout.write=6000
+
+# Rate Limiting
+rate.limit.requests.per.second=50
+
+# Feature Flags
+feature.schema.validation.enabled=true
+feature.response.time.validation.enabled=true
+feature.database.validation.enabled=true
+
+# External Service URLs
+email.service.url=https://email-staging.mybank.com
+notification.service.url=https://notification-staging.mybank.com

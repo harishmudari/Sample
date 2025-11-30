@@ -1,0 +1,119 @@
+EnvironmentManager.java
+
+package com.harish.api.framework.config;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+/**
+ * EnvironmentManager is a thread-safe Singleton that manages the framework configuration.
+ * 
+ * <p>This class ensures that only one instance of FrameworkConfig is created and shared
+ * across the entire framework. It uses the Bill Pugh Singleton Design Pattern (initialization-on-demand
+ * holder idiom) which is thread-safe without requiring synchronization.
+ * 
+ * <p><b>Design Pattern:</b> Singleton (Bill Pugh approach)
+ * 
+ * <p><b>Thread Safety:</b> Yes - The JVM guarantees that the inner static class is not loaded
+ * until getInstance() is called, and class initialization is thread-safe by JLS specification.
+ * 
+ * <p><b>Usage Example:</b>
+ * <pre>{@code
+ * String baseUrl = EnvironmentManager.getInstance().getConfig().getBaseUrl();
+ * int timeout = EnvironmentManager.getInstance().getConfig().getConnectTimeoutMs();
+ * }</pre>
+ * 
+ * @author Harish
+ * @version 1.0
+ */
+public final class EnvironmentManager {
+
+    private static final Logger logger = LogManager.getLogger(EnvironmentManager.class);
+
+    private final FrameworkConfig frameworkConfig;
+
+    /**
+     * Private constructor to prevent external instantiation.
+     * Initializes the FrameworkConfig instance.
+     */
+    private EnvironmentManager() {
+        logger.info("Initializing EnvironmentManager...");
+        this.frameworkConfig = new FrameworkConfig();
+        logger.info("EnvironmentManager initialized successfully for environment: {}", 
+                    frameworkConfig.getEnvironment());
+    }
+
+    /**
+     * Bill Pugh Singleton Helper class.
+     * 
+     * <p>This inner static class is not loaded until getInstance() is called.
+     * When the class is loaded, the JVM ensures thread-safe initialization of the INSTANCE.
+     * This approach eliminates the need for synchronized blocks and provides lazy initialization.
+     */
+    private static class SingletonHelper {
+        // The JVM guarantees that this initialization is thread-safe
+        private static final EnvironmentManager INSTANCE = new EnvironmentManager();
+    }
+
+    /**
+     * Gets the singleton instance of EnvironmentManager.
+     * 
+     * <p>This method is thread-safe and guarantees that only one instance is created
+     * even in multi-threaded environments.
+     * 
+     * @return the singleton instance of EnvironmentManager
+     */
+    public static EnvironmentManager getInstance() {
+        return SingletonHelper.INSTANCE;
+    }
+
+    /**
+     * Gets the FrameworkConfig instance containing all configuration properties.
+     * 
+     * @return the FrameworkConfig instance
+     */
+    public FrameworkConfig getConfig() {
+        return frameworkConfig;
+    }
+
+    /**
+     * Convenience method to get current environment name.
+     * 
+     * @return current environment (DEV/QA/STAGING/PROD)
+     */
+    public String getCurrentEnvironment() {
+        return frameworkConfig.getEnvironment();
+    }
+
+    /**
+     * Prints current configuration summary to logs.
+     * Useful for debugging and verification during test execution.
+     */
+    public void printConfigSummary() {
+        logger.info("========================================");
+        logger.info("FRAMEWORK CONFIGURATION SUMMARY");
+        logger.info("========================================");
+        logger.info("Application Name    : {}", frameworkConfig.getApplicationName());
+        logger.info("Application Version : {}", frameworkConfig.getApplicationVersion());
+        logger.info("Environment         : {}", frameworkConfig.getEnvironment());
+        logger.info("Base URL            : {}", frameworkConfig.getBaseUrl());
+        logger.info("Auth URL            : {}", frameworkConfig.getAuthBaseUrl());
+        logger.info("Connect Timeout     : {} ms", frameworkConfig.getConnectTimeoutMs());
+        logger.info("Read Timeout        : {} ms", frameworkConfig.getReadTimeoutMs());
+        logger.info("Thread Count        : {}", frameworkConfig.getThreadCount());
+        logger.info("Parallel Execution  : {}", frameworkConfig.isParallelExecutionEnabled());
+        logger.info("Schema Validation   : {}", frameworkConfig.isSchemaValidationEnabled());
+        logger.info("DB Validation       : {}", frameworkConfig.isDatabaseValidationEnabled());
+        logger.info("========================================");
+    }
+
+    /**
+     * Prevents cloning of the singleton instance.
+     * 
+     * @throws CloneNotSupportedException always
+     */
+    @Override
+    protected Object clone() throws CloneNotSupportedException {
+        throw new CloneNotSupportedException("Cloning of EnvironmentManager singleton is not allowed");
+    }
+}

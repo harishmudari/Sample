@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration packages="org.apache.logging.log4j.core">
+    
+    <!-- Properties define reusable values -->
+    <Properties>
+        <!-- Log file location -->
+        <Property name="log.path">target/logs</Property>
+        <Property name="log.pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</Property>
+        <Property name="log.pattern.simple">%d{HH:mm:ss} %-5level %logger - %msg%n</Property>
+    </Properties>
+    
+    <Appenders>
+        <!-- Console Appender: Outputs to System.out -->
+        <Console name="ConsoleAppender" target="SYSTEM_OUT">
+            <PatternLayout pattern="${log.pattern.simple}" charset="UTF-8"/>
+            <!-- Color support for better readability in IDE console -->
+            <Filters>
+                <!-- Show INFO and above on console -->
+                <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </Console>
+        
+        <!-- Rolling File Appender: General application logs -->
+        <RollingFile name="FileAppender"
+                     fileName="${log.path}/application.log"
+                     filePattern="${log.path}/application-%d{yyyy-MM-dd}-%i.log">
+            
+            <PatternLayout pattern="${log.pattern}" charset="UTF-8"/>
+            
+            <Policies>
+                <!-- Roll over daily -->
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <!-- Roll over when file size exceeds 10 MB -->
+                <SizeBasedTriggeringPolicy size="10 MB"/>
+            </Policies>
+            
+            <!-- Keep maximum 30 backup files -->
+            <DefaultRolloverStrategy max="30"/>
+            
+            <!-- Log all levels to file -->
+            <Filters>
+                <ThresholdFilter level="DEBUG" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+        
+        <!-- Async Appender: Improves performance for high-volume logging -->
+        <Async name="AsyncFileAppender">
+            <AppenderRef ref="FileAppender"/>
+        </Async>
+        
+        <!-- Error Appender: Captures ERROR and FATAL logs only -->
+        <RollingFile name="ErrorAppender"
+                     fileName="${log.path}/error.log"
+                     filePattern="${log.path}/error-%d{yyyy-MM-dd}-%i.log">
+            
+            <PatternLayout pattern="${log.pattern}" charset="UTF-8"/>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="5 MB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="20"/>
+            
+            <!-- Only ERROR and FATAL -->
+            <Filters>
+                <ThresholdFilter level="ERROR" onMatch="ACCEPT" onMismatch="DENY"/>
+            </Filters>
+        </RollingFile>
+        
+        <!-- Test Execution Appender: Logs test execution events -->
+        <RollingFile name="TestAppender"
+                     fileName="${log.path}/test-execution.log"
+                     filePattern="${log.path}/test-execution-%d{yyyy-MM-dd}-%i.log">
+            
+            <PatternLayout pattern="${log.pattern}" charset="UTF-8"/>
+            
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true"/>
+                <SizeBasedTriggeringPolicy size="20 MB"/>
+            </Policies>
+            
+            <DefaultRolloverStrategy max="10"/>
+        </RollingFile>
+    </Appenders>
+    
+    <Loggers>
+        <!-- Framework-specific loggers (higher detail) -->
+        <Logger name="com.harish.api.framework" level="DEBUG" additivity="false">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="AsyncFileAppender"/>
+            <AppenderRef ref="TestAppender"/>
+        </Logger>
+        
+        <!-- REST Assured logger (useful for debugging API calls) -->
+        <Logger name="io.restassured" level="DEBUG" additivity="false">
+            <AppenderRef ref="FileAppender"/>
+        </Logger>
+        
+        <!-- Test class logger -->
+        <Logger name="com.harish.api.tests" level="INFO" additivity="false">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="TestAppender"/>
+        </Logger>
+        
+        <!-- Suppress verbose third-party logs -->
+        <Logger name="org.apache.http" level="WARN"/>
+        <Logger name="org.apache.commons" level="WARN"/>
+        <Logger name="com.aventstack.extentreports" level="INFO"/>
+        
+        <!-- Root Logger: Captures everything not matched by specific loggers -->
+        <Root level="INFO">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="AsyncFileAppender"/>
+            <AppenderRef ref="ErrorAppender"/>
+        </Root>
+    </Loggers>
+</Configuration>

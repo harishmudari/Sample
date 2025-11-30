@@ -1,0 +1,11 @@
+Key Design Decisions
+
+Bill Pugh Singleton Pattern: Thread-safe without synchronization overhead
+Immutability: Configuration properties are loaded once and never modified
+Fail-Fast: Throws exception immediately if config files are missing
+Separation of Concerns: FrameworkConfig handles loading, EnvironmentManager handles access
+Type Safety: All getters return proper types (int, boolean) with defaults
+Comprehensive Logging: Every configuration load is logged for debugging
+TODO Comments: Clear markers for production security improvements (vault integration)
+
+This configuration system is production-ready and follows enterprise best practices! 

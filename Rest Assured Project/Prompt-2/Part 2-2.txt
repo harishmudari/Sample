@@ -1,0 +1,51 @@
+src/test/resources/config/application-qa.properties
+
+
+# =========================================
+# QA Environment Configuration
+# =========================================
+
+environment=QA
+
+# Base URLs for Banking Microservices
+base.url=https://api-qa.mybank.com
+auth.base.url=https://auth-qa.mybank.com
+
+# Service Endpoints
+accounts.service.url=${base.url}/accounts/v1
+transactions.service.url=${base.url}/transactions/v1
+customers.service.url=${base.url}/customers/v1
+payments.service.url=${base.url}/payments/v1
+cards.service.url=${base.url}/cards/v1
+
+# Authentication Endpoints
+auth.token.url=${auth.base.url}/oauth/token
+auth.refresh.url=${auth.base.url}/oauth/refresh
+auth.revoke.url=${auth.base.url}/oauth/revoke
+
+# TODO: Replace with actual QA credentials (use vault/secret manager in production)
+auth.client.id=qa_client_67890
+auth.client.secret=qa_secret_fghij
+auth.grant.type=client_credentials
+
+# Database Configuration
+db.url=jdbc:postgresql://qa-db.mybank.com:5432/banking_db
+db.username=qa_user
+db.password=qa_pass
+
+# Timeouts - QA environment (production-like)
+timeout.connect=5000
+timeout.read=10000
+timeout.write=5000
+
+# Rate Limiting
+rate.limit.requests.per.second=20
+
+# Feature Flags
+feature.schema.validation.enabled=true
+feature.response.time.validation.enabled=true
+feature.database.validation.enabled=true
+
+# External Service URLs
+email.service.url=https://email-qa.mybank.com
+notification.service.url=https://notification-qa.mybank.com

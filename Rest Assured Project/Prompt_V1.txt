@@ -1,0 +1,29 @@
+Key Features
+1. Dependency Highlights
+
+REST Assured 5.5.0: Latest stable version with enhanced JSON/XML support
+TestNG 7.10.2: Modern testing framework with parallel execution
+Jackson 2.17.2: Fast JSON processing with Java 17 support
+Log4j2 2.23.1: High-performance logging
+Extent Reports 5.1.2: Rich HTML reporting
+Allure 2.27.0: Beautiful test reporting with history tracking
+Owner Library: Type-safe configuration management
+
+2. Maven Profiles
+Execute tests against different environments:
+mvn clean test -Pdev      # Development environment
+mvn clean test -Pqa       # QA environment
+mvn clean test -Pstaging  # Staging environment
+
+3. Execution Commands
+# Run all tests
+mvn clean test
+
+# Run specific suite
+mvn clean test -DsuiteXmlFile=src/test/resources/regression.xml
+
+# Generate Allure report
+mvn allure:serve
+
+# Run with specific thread count
+mvn clean test -DthreadCount=10
